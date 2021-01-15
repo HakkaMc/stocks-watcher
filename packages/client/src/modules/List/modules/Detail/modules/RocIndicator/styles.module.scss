@@ -1,0 +1,19 @@
+.dailyChangesTable{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  text-align: center;
+
+  &>*{
+    width: 65px;
+    padding: 2px;
+    margin-bottom: 2px;
+    margin-right: 2px;
+  }
+}
+
+.percentageSum{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

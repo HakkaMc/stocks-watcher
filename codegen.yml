@@ -1,0 +1,7 @@
+overwrite: true
+schema: "./packages/shared/src/schema.graphql"
+generates:
+  ./packages/shared/src/graphql.d.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"

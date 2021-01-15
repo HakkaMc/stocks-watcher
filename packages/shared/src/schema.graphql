@@ -1,0 +1,173 @@
+type Query {
+  findSymbols(
+    
+    filter: FilterFindManySymbolInput
+    skip: Int
+    limit: Int = 100
+    sort: SortFindManySymbolInput
+  ): [Symbol!]!
+  getUserProfile: User
+  getRocIndicator(symbol: String): RocIndicator
+  getQuote(symbol: String): GetQuote
+}
+
+type Symbol {
+  description: String!
+  displaySymbol: String!
+  symbol: String!
+  type: String!
+  currency: String
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+
+scalar MongoID
+
+scalar Date
+
+
+input FilterFindManySymbolInput {
+  description: String
+  displaySymbol: String
+  symbol: String
+  type: String
+  currency: String
+  _id: MongoID
+  updatedAt: Date
+  createdAt: Date
+
+  
+  _operators: FilterFindManySymbolOperatorsInput
+  OR: [FilterFindManySymbolInput!]
+  AND: [FilterFindManySymbolInput!]
+  search: String
+}
+
+
+input FilterFindManySymbolOperatorsInput {
+  description: FilterFindManySymbolDescriptionOperatorsInput
+  displaySymbol: FilterFindManySymbolDisplaySymbolOperatorsInput
+  symbol: FilterFindManySymbolSymbolOperatorsInput
+  _id: FilterFindManySymbol_idOperatorsInput
+}
+
+input FilterFindManySymbolDescriptionOperatorsInput {
+  gt: String
+  gte: String
+  lt: String
+  lte: String
+  ne: String
+  in: [String]
+  nin: [String]
+  regex: RegExpAsString
+  exists: Boolean
+}
+
+"""
+The string representation of JavaScript regexp. You may provide it with flags "/^abc.*/i" or without flags like "^abc.*". More info about RegExp characters and flags: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+"""
+scalar RegExpAsString @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-262.pdf")
+
+input FilterFindManySymbolDisplaySymbolOperatorsInput {
+  gt: String
+  gte: String
+  lt: String
+  lte: String
+  ne: String
+  in: [String]
+  nin: [String]
+  regex: RegExpAsString
+  exists: Boolean
+}
+
+input FilterFindManySymbolSymbolOperatorsInput {
+  gt: String
+  gte: String
+  lt: String
+  lte: String
+  ne: String
+  in: [String]
+  nin: [String]
+  regex: RegExpAsString
+  exists: Boolean
+}
+
+input FilterFindManySymbol_idOperatorsInput {
+  gt: MongoID
+  gte: MongoID
+  lt: MongoID
+  lte: MongoID
+  ne: MongoID
+  in: [MongoID]
+  nin: [MongoID]
+  exists: Boolean
+}
+
+enum SortFindManySymbolInput {
+  _ID_ASC
+  _ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  DISPLAYSYMBOL_ASC
+  DISPLAYSYMBOL_DESC
+  SYMBOL_ASC
+  SYMBOL_DESC
+}
+
+type User {
+  name: String!
+  dashboard: UserDashboard
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+type UserDashboard {
+  watchedSymbols(limit: Int = 100, sort: SortFindByIdsSymbolInput): [Symbol!]!
+}
+
+enum SortFindByIdsSymbolInput {
+  _ID_ASC
+  _ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  DISPLAYSYMBOL_ASC
+  DISPLAYSYMBOL_DESC
+  SYMBOL_ASC
+  SYMBOL_DESC
+}
+
+type RocIndicator {
+  sum: Float!
+  days: [RocIndicatorDay]
+}
+
+type RocIndicatorDay {
+  date: String!
+  value: Float!
+}
+
+type GetQuote {
+  openPrice: Float!
+  highPrice: Float!
+  lowPrice: Float!
+  currentPrice: Float!
+  previousClose: Float!
+}
+
+type Mutation {
+  saveSymbolToDashboard(symbol: String): Symbol
+}
+
+type Subscription {
+  lastPrice(symbol: String): LastPrice
+}
+
+type LastPrice {
+  symbol: String!
+  price: Float!
+  timestamp: Float!
+  volume: Float!
+}
