@@ -1,14 +1,13 @@
 import { createSchema, Type, typedModel, ExtractProps, ExtractDoc } from 'ts-mongoose'
 import { composeMongoose } from 'graphql-compose-mongoose'
 
-import { SymbolSchema } from '../symbol/schema'
-
 export const UserSchema = createSchema(
   {
     name: Type.string({ required: true, unique: true }),
-    dashboard: {
-      watchedSymbols: Type.array().of(Type.ref(Type.objectId()).to('Symbol', SymbolSchema))
-    }
+    email: Type.string({ required: true, unique: true }),
+    accessToken: Type.string(),
+    refreshToken: Type.string(),
+    accessTokenExpiration: Type.number()
   },
   { _id: true, timestamps: true }
 )

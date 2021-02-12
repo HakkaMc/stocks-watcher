@@ -64,7 +64,12 @@ export const symbolResolvers = {
       name: 'search',
       type: 'String',
       query: (query, value, resolveParams) => {
-        query.$text = { $search: value }
+        const search = `\"${value}\"`
+        return query.$text = {
+          $search: search,
+          $caseSensitive: false,
+          $diacriticSensitive: false
+        }
       }
     })
   }

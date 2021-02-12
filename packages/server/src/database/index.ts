@@ -1,13 +1,17 @@
 import fs from 'fs'
 import { printSchema } from 'graphql/utilities'
 import mongoose from 'mongoose'
-import { schemaComposer, Resolver, ResolverResolveParams } from 'graphql-compose'
+import { schemaComposer } from 'graphql-compose'
 
 import { symbolResolvers } from './symbol/resolvers'
-import { userResolvers } from './user/resolvers'
+import { dashboardResolvers } from './dashboard/resolvers'
 import { finnhubResolvers } from '../finnhub/resolvers'
+import { chartGroupResolvers } from './chartGroup/resolvers'
+import { noteResolvers } from './note/resolvers'
 
 export const initDatabase = async () => {
+  console.log('initDatabase')
+
   await mongoose.connect('mongodb://localhost:27017/stocksWatcher', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -17,12 +21,16 @@ export const initDatabase = async () => {
 
   schemaComposer.Query.addFields({
     ...symbolResolvers.query,
-    ...userResolvers.query,
-    ...finnhubResolvers.query
+    ...dashboardResolvers.query,
+    ...finnhubResolvers.query,
+    ...chartGroupResolvers.query,
+    ...noteResolvers.query
   })
 
   schemaComposer.Mutation.addFields({
-    ...userResolvers.mutation
+    ...dashboardResolvers.mutation,
+    ...chartGroupResolvers.mutation,
+    ...noteResolvers.mutation
   })
 
   // @ts-ignore

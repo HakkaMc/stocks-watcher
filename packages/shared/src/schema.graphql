@@ -6,9 +6,13 @@ type Query {
     limit: Int = 100
     sort: SortFindManySymbolInput
   ): [Symbol!]!
-  getUserProfile: User
-  getRocIndicator(symbol: String): RocIndicator
+  getDashboard: Dashboard
+  getDailyChangeIndicator(symbol: String): DailyChangeIndicator
   getQuote(symbol: String): GetQuote
+  getPrices(symbol: String!, timestampFrom: Float, timestampTo: Float, range: String): GetPrices
+  getChartGroups: [ChartGroup]
+  getChartGroup(chartGroupId: String!): ChartGroup
+  getNote: Note
 }
 
 type Symbol {
@@ -116,35 +120,27 @@ enum SortFindManySymbolInput {
   SYMBOL_DESC
 }
 
-type User {
-  name: String!
-  dashboard: UserDashboard
+type Dashboard {
+  user: MongoID
+  watchlists: [DashboardWatchlists]!
   _id: MongoID!
   updatedAt: Date
   createdAt: Date
 }
 
-type UserDashboard {
-  watchedSymbols(limit: Int = 100, sort: SortFindByIdsSymbolInput): [Symbol!]!
+type DashboardWatchlists {
+  name: String!
+  symbols: [String]!
+  _id: MongoID
+  symbolsData: [Symbol]
 }
 
-enum SortFindByIdsSymbolInput {
-  _ID_ASC
-  _ID_DESC
-  DESCRIPTION_ASC
-  DESCRIPTION_DESC
-  DISPLAYSYMBOL_ASC
-  DISPLAYSYMBOL_DESC
-  SYMBOL_ASC
-  SYMBOL_DESC
-}
-
-type RocIndicator {
+type DailyChangeIndicator {
   sum: Float!
-  days: [RocIndicatorDay]
+  days: [DailyChangeIndicatorDay]
 }
 
-type RocIndicatorDay {
+type DailyChangeIndicatorDay {
   date: String!
   value: Float!
 }
@@ -157,8 +153,57 @@ type GetQuote {
   previousClose: Float!
 }
 
+type GetPrices {
+  priceArray: [PriceTimestampArray]
+}
+
+type PriceTimestampArray {
+  price: Float!
+  timestamp: Float!
+}
+
+type ChartGroup {
+  user: MongoID
+  name: String!
+  layout: EnumChartGroupLayout!
+  charts: [ChartGroupCharts]!
+  _id: MongoID!
+}
+
+enum EnumChartGroupLayout {
+  vertical
+  grid
+}
+
+type ChartGroupCharts {
+  symbol: String!
+  order: Float!
+  range: JSON!
+  _id: MongoID
+  symbolData: Symbol
+}
+
+
+scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+type Note {
+  user: MongoID
+  text: String
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
 type Mutation {
-  saveSymbolToDashboard(symbol: String): Symbol
+  saveSymbolToDashboard(symbol: String!, watchlist: String!): String
+  changeSymbolWatchlist(symbol: String!, watchlist: String, add: Boolean!): String
+  createWatchlist(watchlist: String!): String
+  removeSymbolFromDashboard(symbol: String!): String
+  createChartGroup(name: String!): ChartGroup
+  addChartToChartGroup(chartGroupId: String!, symbol: String!, order: Int!, range: String!): String!
+  removeChartFromChartGroup(chartGroupId: String!, symbol: String!): String!
+  removeChartGroup(chartGroupId: String!): String!
+  saveNote(text: String!): String!
 }
 
 type Subscription {

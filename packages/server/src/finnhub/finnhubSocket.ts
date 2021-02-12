@@ -54,7 +54,7 @@ const sendBuffer: Array<any> = []
 export const socket = new WebSocket(`${finnhubWsUrl}?token=${token}`)
 
 socket.onopen = () => {
-  console.log('socket opened')
+  console.log('Finnhub socket opened')
   socketIsOpened = true
 
   setInterval(() => {
@@ -106,7 +106,7 @@ socket.onmessage = (event) => {
 }
 
 socket.onclose = () => {
-  console.log('Socked closed')
+  console.log('Finnhub socked closed')
   socketIsOpened = false
 }
 
@@ -120,7 +120,7 @@ socket.onclose = () => {
 // }
 
 socket.onerror = (error) => {
-  console.log('Websocket error: ', error)
+  console.error('Websocket error: ', error)
 }
 
 const subscriptionList = new Set()

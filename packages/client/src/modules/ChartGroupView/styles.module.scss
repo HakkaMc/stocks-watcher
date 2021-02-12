@@ -1,0 +1,45 @@
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  flex: 0 0 auto;
+
+  .box {
+    display: flex;
+    align-items: center;
+
+    & > *{
+      &:first-child{
+        font-weight: bold;
+      }
+
+      &:nth-child(2){
+        flex: 1 1 auto;
+      }
+
+      &:not(:nth-child(2)) {
+        flex: 0 0 auto;
+      }
+    }
+
+  }
+}
+
+.body {
+  flex: 1 1 auto;
+  display: grid;
+  overflow: auto;
+  grid-auto-rows: auto;
+  align-content: stretch;
+
+  &.vertical {
+  }
+
+  &.grid {
+    grid-template-columns: auto auto;
+  }
+}

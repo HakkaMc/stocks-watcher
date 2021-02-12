@@ -13,14 +13,19 @@ export type Scalars = {
   Date: any;
   /** The string representation of JavaScript regexp. You may provide it with flags "/^abc.*\/i" or without flags like "^abc.*". More info about RegExp characters and flags: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions */
   RegExpAsString: any;
+  JSON: any;
 };
 
 export type Query = {
   __typename?: 'Query';
   findSymbols: Array<Symbol>;
-  getUserProfile?: Maybe<User>;
-  getRocIndicator?: Maybe<RocIndicator>;
+  getDashboard?: Maybe<Dashboard>;
+  getDailyChangeIndicator?: Maybe<DailyChangeIndicator>;
   getQuote?: Maybe<GetQuote>;
+  getPrices?: Maybe<GetPrices>;
+  getChartGroups?: Maybe<Array<Maybe<ChartGroup>>>;
+  getChartGroup?: Maybe<ChartGroup>;
+  getNote?: Maybe<Note>;
 };
 
 
@@ -32,13 +37,26 @@ export type QueryFindSymbolsArgs = {
 };
 
 
-export type QueryGetRocIndicatorArgs = {
+export type QueryGetDailyChangeIndicatorArgs = {
   symbol?: Maybe<Scalars['String']>;
 };
 
 
 export type QueryGetQuoteArgs = {
   symbol?: Maybe<Scalars['String']>;
+};
+
+
+export type QueryGetPricesArgs = {
+  symbol: Scalars['String'];
+  timestampFrom?: Maybe<Scalars['Float']>;
+  timestampTo?: Maybe<Scalars['Float']>;
+  range?: Maybe<Scalars['String']>;
+};
+
+
+export type QueryGetChartGroupArgs = {
+  chartGroupId: Scalars['String'];
 };
 
 export type Symbol = {
@@ -136,45 +154,31 @@ export enum SortFindManySymbolInput {
   SymbolDesc = 'SYMBOL_DESC'
 }
 
-export type User = {
-  __typename?: 'User';
-  name: Scalars['String'];
-  dashboard?: Maybe<UserDashboard>;
+export type Dashboard = {
+  __typename?: 'Dashboard';
+  user?: Maybe<Scalars['MongoID']>;
+  watchlists: Array<Maybe<DashboardWatchlists>>;
   _id: Scalars['MongoID'];
   updatedAt?: Maybe<Scalars['Date']>;
   createdAt?: Maybe<Scalars['Date']>;
 };
 
-export type UserDashboard = {
-  __typename?: 'UserDashboard';
-  watchedSymbols: Array<Symbol>;
+export type DashboardWatchlists = {
+  __typename?: 'DashboardWatchlists';
+  name: Scalars['String'];
+  symbols: Array<Maybe<Scalars['String']>>;
+  _id?: Maybe<Scalars['MongoID']>;
+  symbolsData?: Maybe<Array<Maybe<Symbol>>>;
 };
 
-
-export type UserDashboardWatchedSymbolsArgs = {
-  limit?: Maybe<Scalars['Int']>;
-  sort?: Maybe<SortFindByIdsSymbolInput>;
-};
-
-export enum SortFindByIdsSymbolInput {
-  IdAsc = '_ID_ASC',
-  IdDesc = '_ID_DESC',
-  DescriptionAsc = 'DESCRIPTION_ASC',
-  DescriptionDesc = 'DESCRIPTION_DESC',
-  DisplaysymbolAsc = 'DISPLAYSYMBOL_ASC',
-  DisplaysymbolDesc = 'DISPLAYSYMBOL_DESC',
-  SymbolAsc = 'SYMBOL_ASC',
-  SymbolDesc = 'SYMBOL_DESC'
-}
-
-export type RocIndicator = {
-  __typename?: 'RocIndicator';
+export type DailyChangeIndicator = {
+  __typename?: 'DailyChangeIndicator';
   sum: Scalars['Float'];
-  days?: Maybe<Array<Maybe<RocIndicatorDay>>>;
+  days?: Maybe<Array<Maybe<DailyChangeIndicatorDay>>>;
 };
 
-export type RocIndicatorDay = {
-  __typename?: 'RocIndicatorDay';
+export type DailyChangeIndicatorDay = {
+  __typename?: 'DailyChangeIndicatorDay';
   date: Scalars['String'];
   value: Scalars['Float'];
 };
@@ -188,14 +192,113 @@ export type GetQuote = {
   previousClose: Scalars['Float'];
 };
 
+export type GetPrices = {
+  __typename?: 'GetPrices';
+  priceArray?: Maybe<Array<Maybe<PriceTimestampArray>>>;
+};
+
+export type PriceTimestampArray = {
+  __typename?: 'PriceTimestampArray';
+  price: Scalars['Float'];
+  timestamp: Scalars['Float'];
+};
+
+export type ChartGroup = {
+  __typename?: 'ChartGroup';
+  user?: Maybe<Scalars['MongoID']>;
+  name: Scalars['String'];
+  layout: EnumChartGroupLayout;
+  charts: Array<Maybe<ChartGroupCharts>>;
+  _id: Scalars['MongoID'];
+};
+
+export enum EnumChartGroupLayout {
+  Vertical = 'vertical',
+  Grid = 'grid'
+}
+
+export type ChartGroupCharts = {
+  __typename?: 'ChartGroupCharts';
+  symbol: Scalars['String'];
+  order: Scalars['Float'];
+  range: Scalars['JSON'];
+  _id?: Maybe<Scalars['MongoID']>;
+  symbolData?: Maybe<Symbol>;
+};
+
+
+export type Note = {
+  __typename?: 'Note';
+  user?: Maybe<Scalars['MongoID']>;
+  text: Scalars['String'];
+  _id: Scalars['MongoID'];
+  updatedAt?: Maybe<Scalars['Date']>;
+  createdAt?: Maybe<Scalars['Date']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
-  saveSymbolToDashboard?: Maybe<Symbol>;
+  saveSymbolToDashboard?: Maybe<Scalars['String']>;
+  changeSymbolWatchlist?: Maybe<Scalars['String']>;
+  createWatchlist?: Maybe<Scalars['String']>;
+  removeSymbolFromDashboard?: Maybe<Scalars['String']>;
+  createChartGroup?: Maybe<ChartGroup>;
+  addChartToChartGroup: Scalars['String'];
+  removeChartFromChartGroup: Scalars['String'];
+  removeChartGroup: Scalars['String'];
+  saveNote: Scalars['String'];
 };
 
 
 export type MutationSaveSymbolToDashboardArgs = {
-  symbol?: Maybe<Scalars['String']>;
+  symbol: Scalars['String'];
+  watchlist: Scalars['String'];
+};
+
+
+export type MutationChangeSymbolWatchlistArgs = {
+  symbol: Scalars['String'];
+  watchlist?: Maybe<Scalars['String']>;
+  add: Scalars['Boolean'];
+};
+
+
+export type MutationCreateWatchlistArgs = {
+  watchlist: Scalars['String'];
+};
+
+
+export type MutationRemoveSymbolFromDashboardArgs = {
+  symbol: Scalars['String'];
+};
+
+
+export type MutationCreateChartGroupArgs = {
+  name: Scalars['String'];
+};
+
+
+export type MutationAddChartToChartGroupArgs = {
+  chartGroupId: Scalars['String'];
+  symbol: Scalars['String'];
+  order: Scalars['Int'];
+  range: Scalars['String'];
+};
+
+
+export type MutationRemoveChartFromChartGroupArgs = {
+  chartGroupId: Scalars['String'];
+  symbol: Scalars['String'];
+};
+
+
+export type MutationRemoveChartGroupArgs = {
+  chartGroupId: Scalars['String'];
+};
+
+
+export type MutationSaveNoteArgs = {
+  text: Scalars['String'];
 };
 
 export type Subscription = {

@@ -1,0 +1,70 @@
+.container {
+  border-bottom: solid 1px #d4d4d4;
+}
+
+.header{
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+
+  //& > *:not(:last-child){
+  //  margin-right: 10px;
+  //}
+
+  .symbolCell {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    max-width: 200px;
+    cursor: pointer;
+
+    .symbol {
+      font-weight: bold;
+    }
+
+    .description {
+      font-size: 0.7rem;
+      display: inline-block;
+      white-space: nowrap;
+      overflow: hidden !important;
+      text-overflow: ellipsis;
+      width: inherit;
+    }
+  }
+
+  .rocketIcon{
+    flex: 0 0 30px;
+  }
+
+  .chart{
+    flex: 0 0 250px;
+  }
+
+  .openPrice {
+    flex: 0 0 80px;
+    text-align: right;
+  }
+
+  .currentPrice{
+    flex: 0 0 80px;
+    text-align: right;
+  }
+
+  .percentageGain{
+    flex: 0 0 75px;
+    text-align: right;
+
+    &.up {
+      color: green;
+    }
+
+    &.down {
+      color: red;
+    }
+
+    //& > * {
+    //  padding: 2px 4px;
+    //}
+  }
+}

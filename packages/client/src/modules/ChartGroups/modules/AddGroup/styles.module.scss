@@ -1,0 +1,36 @@
+.container{
+  width: 100%;
+
+  form {
+    width: 100%;
+    display: flex;
+
+    .input{
+      flex: 0 1 400px;
+
+      & > * {
+        color: white;
+
+        &:before{
+          border-color: white;
+        }
+
+        &:after{
+          border-color: white;
+        }
+
+        &:hover {
+          &:before {
+            border-color: white !important;
+          }
+        }
+      }
+    }
+
+    .saveIcon{
+      color: white;
+    }
+  }
+}
+
+

@@ -5,6 +5,7 @@ import { Controller, UseFormMethods } from 'react-hook-form'
 type Props = TextFieldProps & {
   form: UseFormMethods<any>
   name: string
+  className?: string
 }
 
 export const Input: FC<Props> = ({ name, form, onBlur, onChange, ...rest }: Props) => (

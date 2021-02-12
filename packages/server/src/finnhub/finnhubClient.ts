@@ -1,5 +1,5 @@
 import * as finnhub from 'finnhub'
-import { GetQuote, RocIndicator, RocIndicatorDay } from '@sw/shared/src/graphql'
+import { GetQuote, DailyChangeIndicator, DailyChangeIndicatorDay } from '@sw/shared/src/graphql'
 
 import { token } from '../constants'
 import { SymbolTsType } from '../database/symbol/schema'
@@ -80,34 +80,74 @@ export const getSymbols = () =>
   })
 
 // TODO - add caching
-export const getRocIndicator = (
+export const getDailyChangeIndicator = (
   symbol: string,
   fromTimestamp: number,
   toTimestamp: number
-): Promise<RocIndicator | undefined> =>
+): Promise<DailyChangeIndicator | undefined> =>
   new Promise(async (resolve, reject) => {
-    finnhubClient.technicalIndicator(symbol, 'D', fromTimestamp, toTimestamp, 'roc', {}, (error, data, response) => {
+    finnhubClient.stockCandles(symbol, 'D', fromTimestamp, toTimestamp, {}, (error, data, response) => {
       if (error) {
         console.error(error)
         resolve(undefined)
+      } else if (!data) {
+        resolve(undefined)
       } else {
-        const days: Array<RocIndicatorDay> = []
-        let sum = 0
+        const days: Array<DailyChangeIndicatorDay> = []
+        let wholePercentage = 0
+        let firstPreviousClose = 0
+        let lastClose = 0
 
-        data?.roc?.forEach((value: number, i: number) => {
-          const date = new Date(data.t[i] * 1000)
-          days.push({
-            date: `${date.getDate()}.${date.getMonth() + 1}`,
-            value
-          })
-          sum += value
-        })
+        if (data.t && data.c) {
+          firstPreviousClose = data.c[0]
+
+          for (let i = 1; i < data.t.length; i++) {
+            const date = new Date(data.t[i] * 1000)
+            const previousClose = data.c[i - 1]
+            const actualClose = data.c[i]
+            // console.log(previousClose, actualClose, data.o[i], data.h[i], data.l[i])
+            const percentage = (100 / previousClose) * actualClose - 100
+
+            days.push({
+              date: `${date.getDate()}.${date.getMonth() + 1}`,
+              value: percentage
+            })
+
+            lastClose = actualClose
+          }
+
+          wholePercentage = (100 / firstPreviousClose) * lastClose - 100
+        }
 
         resolve({
           days,
-          sum
+          sum: wholePercentage
         })
       }
+
+      // finnhubClient.technicalIndicator(symbol, 'D', fromTimestamp, toTimestamp, 'roc', {}, (error, data, response) => {
+      //   if (error) {
+      //     console.error(error)
+      //     resolve(undefined)
+      //   } else {
+      //     const days: Array<RocIndicatorDay> = []
+      //     let sum = 0
+      //
+      //     data?.roc?.forEach((value: number, i: number) => {
+      //       const date = new Date(data.t[i] * 1000)
+      //       days.push({
+      //         date: `${date.getDate()}.${date.getMonth() + 1}`,
+      //         value
+      //       })
+      //       sum += value
+      //     })
+      //
+      //     resolve({
+      //       days,
+      //       sum
+      //     })
+      //   }
+      // })
     })
   })
 
@@ -131,40 +171,53 @@ export const getQuote = (symbol: string): Promise<GetQuote | undefined> =>
     })
   })
 
-export const getStockPrices = (symbol:string, fromTimestamp: number, toTimestamp: number): Promise<Array<{price: number, timestamp: number}>|undefined> => new Promise((resolve, reject)=>{
+export const getStockPrices = (
+  symbol: string,
+  timestampFrom: number,
+  timestampTo: number,
+  range: FinnhubRange
+): Promise<Array<{ price: number; timestamp: number }> | undefined> =>
+  new Promise((resolve, reject) => {
+    let tForm = parseInt(timestampFrom.toString())
+    let tTo = parseInt(timestampTo.toString())
 
-  // console.log(symbol, fromTimestamp, toTimestamp)
-
-  finnhubClient.stockCandles(symbol, '1', fromTimestamp, toTimestamp,{}, (error, data, response)=>{
-    if (error) {
-      console.error(error)
-      resolve(undefined)
-    }else if (!data) {
-      resolve(undefined)
-    } else {
-      const priceObjectArray: Array<{price: number, timestamp: number}> = []
-      if(data.t && data.c) {
-        const timestamps: Array<number> = data.t
-        const prices: Array<number> = data.c
-
-        for (let i = 0; i < timestamps.length; i++) {
-          priceObjectArray.push({
-            price: parseFloat(prices[i].toString()),
-            timestamp: parseFloat(timestamps[i].toString())
-          })
-        }
-
-        const sortedPrices = priceObjectArray.sort((a, b) => {
-          if (a.timestamp < b.timestamp) return -1
-          else if (a.timestamp > b.timestamp) return 1
-          else return 0
-        })
-
-        resolve(sortedPrices)
-      }
-      else{
-        resolve(undefined)
-      }
+    if (tForm.toString().length === 13) {
+      tForm = parseInt((tForm / 1000).toFixed(0))
+      tTo = parseInt((tTo / 1000).toFixed(0))
     }
+
+    // console.log('getStockPrices: ', symbol, new Date(tForm*1000), new Date(tTo*1000))
+
+    finnhubClient.stockCandles(symbol, range || 5, tForm, tTo, {}, (error, data, response) => {
+      if (error) {
+        console.error(error)
+        resolve(undefined)
+      } else if (!data) {
+        resolve(undefined)
+      } else {
+        const priceObjectArray: Array<{ price: number; timestamp: number }> = []
+        if (data.t && data.c) {
+          const timestamps: Array<number> = data.t
+          const prices: Array<number> = data.c
+
+          for (let i = 0; i < timestamps.length; i++) {
+            // console.log(new Date(parseFloat(timestamps[i].toString())*1000))
+            priceObjectArray.push({
+              price: parseFloat(prices[i].toString()),
+              timestamp: parseFloat(timestamps[i].toString()) * 1000
+            })
+          }
+
+          const sortedPrices = priceObjectArray.sort((a, b) => {
+            if (a.timestamp < b.timestamp) return -1
+            if (a.timestamp > b.timestamp) return 1
+            return 0
+          })
+
+          resolve(sortedPrices)
+        } else {
+          resolve(undefined)
+        }
+      }
+    })
   })
-})

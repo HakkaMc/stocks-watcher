@@ -1,0 +1,40 @@
+.container {
+  min-height: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+
+  .content{
+    width: 100%;
+    position: relative;
+
+    .outsideClickLayer{
+      position: fixed;
+      left: 0;
+      top:0;
+      bottom: 0;
+      right: 0;
+      z-index: 1;
+    }
+
+    .listContainer{
+      position: absolute;
+      top: 100%;
+      z-index: 5;
+      background-color: white;
+      border: solid 1px #d6d6d6;
+
+      .list{
+        & > * {
+          cursor: pointer;
+
+          &:hover{
+            background-color: #d6d6d6;
+          }
+        }
+      }
+    }
+  }
+}
+
+

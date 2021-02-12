@@ -1,0 +1,90 @@
+.container{
+  width: 100%;
+}
+
+.form {
+  display: flex;
+  position: relative;
+
+  & > *:first-child{
+    flex: 1 1 auto;
+  }
+
+  .symbolInput.white{
+    & > * {
+      color: white;
+
+      &:before{
+        border-color: white;
+      }
+
+      &:after{
+        border-color: white;
+      }
+
+      &:hover {
+        &:before {
+          border-color: white !important;
+        }
+      }
+    }
+  }
+
+  .loading {
+    position: absolute;
+    right: 0;
+    top: 0;
+    color: white;
+    display: none;
+
+    &.show {
+      display: block;
+    }
+  }
+}
+
+.outsideClickLayer{
+  position: fixed;
+  left: 0;
+  top:0;
+  bottom: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.listStaticContainer {
+  position: relative;
+
+  .listFloatingContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: white;
+    padding: 15px;
+    border: solid 1px #d6d6d6;
+    color: black;
+    z-index: 1;
+
+    .listItem {
+      cursor: pointer;
+      //display: flex;
+
+      &:hover {
+        font-weight: bold;
+      }
+
+      .symbol {
+      //  flex: 0 0 100px;
+      }
+
+      .description {
+      //  flex: 0 0 auto;
+      }
+
+      .type {
+      //  padding-left: 15px;
+      //  white-space: nowrap;
+      }
+    }
+  }
+}

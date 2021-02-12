@@ -1,0 +1,40 @@
+.group {
+  .header {
+    display: flex;
+    align-items: center;
+
+    & > * {
+      flex: 0 0 auto;
+
+      &:nth-child(1){
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    .link {
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+
+  .symbolContainer {
+    .symbol {
+      font-weight: bold;
+    }
+
+    .description {
+      font-size: 0.7rem;
+    }
+  }
+  //
+  //.symbolList {
+  //  display: flex;
+  //  flex-wrap: wrap;
+  //
+  //  & > *:not(:last-child) {
+  //    margin-right: 15px;
+  //  }
+  //}
+}

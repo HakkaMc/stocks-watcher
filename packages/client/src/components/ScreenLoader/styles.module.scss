@@ -1,0 +1,18 @@
+.container{
+  left: 0;
+  top: 0;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  display: flex;
+  align-items:center;
+  justify-content: center;
+  background-color: white;
+  z-index: 10000;
+
+  .icon{
+    width: 200px;
+    height: 200px;
+  }
+}

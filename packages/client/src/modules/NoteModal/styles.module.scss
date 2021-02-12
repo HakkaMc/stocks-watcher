@@ -1,0 +1,11 @@
+.modal{
+  display: flex;
+  flex-direction: column;
+
+  .contentWrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+  }
+}

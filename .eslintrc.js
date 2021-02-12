@@ -53,6 +53,13 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'off',
     'jsx-a11y/no-static-element-interactions': 'off',
     'react/jsx-props-no-spreading': 'off',
-    'no-param-reassign': ['error', { props: false }]
+    'no-param-reassign': ['error', { props: false }],
+    'no-underscore-dangle': 'off',
+    'react/require-default-props': 'off',
+    'no-debugger': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    'import/no-webpack-loader-syntax': 'off',
+    'global-require': 'off',
+    'radix': 'off'
   }
 }

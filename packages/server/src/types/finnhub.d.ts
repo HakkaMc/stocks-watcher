@@ -1,3 +1,5 @@
+type FinnhubRange = '1' | '5' | '15' | '30' | '60' | 'D' | 'W' | 'M'
+
 declare module 'finnhub' {
   type ApiClientType = {
     instance: {
@@ -6,8 +8,6 @@ declare module 'finnhub' {
       }
     }
   }
-
-  type Range = '1' | '5' | '15' | '30' | '60' | 'D' | 'W' | 'M'
 
   type Callback = (error: any, data: any, response: any) => void
 
@@ -24,7 +24,7 @@ declare module 'finnhub' {
 
     technicalIndicator: (
       symbol: string,
-      range: Range,
+      range: FinnhubRange,
       from: number,
       to: number,
       indicator: string,
@@ -32,8 +32,13 @@ declare module 'finnhub' {
       callback: Callback
     ) => void
 
-    stockCandles: (symbol: string, range: Range, from: number,
-                   to: number,options: Record<string, any>,
-                   callback: Callback) => void
+    stockCandles: (
+      symbol: string,
+      range: FinnhubRange,
+      from: number,
+      to: number,
+      options: Record<string, any>,
+      callback: Callback
+    ) => void
   }
 }

@@ -27,7 +27,12 @@
     "subscriptions-transport-ws": "^0.9.18",
     "ts-mongoose": "^0.0.24",
     "websocket": "^1.0.33",
-    "sendmail": "^1.6.1"
+    "sendmail": "^1.6.1",
+    "mongoose-unique-array": "^0.3.4",
+    "cors": "^2.8.5",
+    "googleapis": "^67.0.0",
+    "express-session": "^1.17.1",
+    "connect-mongo": "^3.2.0"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.7.4",
@@ -38,7 +43,8 @@
     "simple-graphql-to-typescript": "^0.10.6",
     "ts-node": "^9.1.1",
     "ts-node-dev": "^1.1.1",
-    "@types/sendmail": "^1.4.2"
+    "@types/sendmail": "^1.4.2",
+    "@types/express-session": "^1.17.3"
   },
   "peerDependencies": {
     "@testing-library/jest-dom": "*",

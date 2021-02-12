@@ -5,9 +5,7 @@ export type SelectedSymbol = SearchedSymbolObj
 export type SelectedSymbols = Array<SelectedSymbol>
 
 export type User = {
-  dashboard: {
-    selectedSymbols: SelectedSymbols
-  }
+  authorized: boolean
 }
 
 // export type SetDashboardSelectedSymbolsPayload = SelectedSymbols

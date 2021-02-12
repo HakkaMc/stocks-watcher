@@ -1,8 +1,9 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { App } from '../../../types/redux/app'
 
 const initialState: App = {
-  appReady: false
+  appReady: false,
+  showNotes: false
 }
 
 export const app = createSlice({
@@ -10,7 +11,12 @@ export const app = createSlice({
   name: 'APP',
   reducers: {
     setAppReady: (state) => {
+      console.log('setAppReady')
       state.appReady = true
+    },
+    toggleShowNotes: (state) => {
+      console.log('toggleShowNotes')
+      state.showNotes = !state.showNotes
     }
   }
 })
