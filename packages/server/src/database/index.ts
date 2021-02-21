@@ -8,6 +8,7 @@ import { dashboardResolvers } from './dashboard/resolvers'
 import { finnhubResolvers } from '../finnhub/resolvers'
 import { chartGroupResolvers } from './chartGroup/resolvers'
 import { noteResolvers } from './note/resolvers'
+import { priceAlertResolvers } from './priceAlert/resolvers'
 
 export const initDatabase = async () => {
   console.log('initDatabase')
@@ -24,13 +25,15 @@ export const initDatabase = async () => {
     ...dashboardResolvers.query,
     ...finnhubResolvers.query,
     ...chartGroupResolvers.query,
-    ...noteResolvers.query
+    ...noteResolvers.query,
+    ...priceAlertResolvers.query
   })
 
   schemaComposer.Mutation.addFields({
     ...dashboardResolvers.mutation,
     ...chartGroupResolvers.mutation,
-    ...noteResolvers.mutation
+    ...noteResolvers.mutation,
+    ...priceAlertResolvers.mutation
   })
 
   // @ts-ignore

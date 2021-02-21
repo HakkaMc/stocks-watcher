@@ -22,3 +22,8 @@ export enum ModalPriority {
   High,
   Error
 }
+
+export enum ModalRoutes {
+  Note,
+  Reminder
+}

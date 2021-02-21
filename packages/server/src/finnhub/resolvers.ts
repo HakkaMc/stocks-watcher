@@ -140,8 +140,9 @@ export const finnhubResolvers = {
         symbol: 'String'
       },
       resolve: (data: any) => data,
-      subscribe: async (parent: any, { symbol }: { symbol: string }) => {
-        lastPriceSubscribe(symbol)
+      subscribe: async (parent: any, { symbol }: { symbol: string }, context: any) => {
+        const { userId } = context.session
+        lastPriceSubscribe(symbol, userId)
         return pubSub.asyncIterator([`LAST_PRICE_${symbol}`])
       }
     }

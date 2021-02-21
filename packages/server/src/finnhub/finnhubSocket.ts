@@ -1,6 +1,7 @@
 import { w3cwebsocket as WebSocket } from 'websocket'
 import { finnhubWsUrl, token } from '../constants'
 import { pubSub } from '../pubSub'
+import {setLastPrice} from '../cache'
 
 type LastPriceData = {
   /**
@@ -77,7 +78,7 @@ socket.onmessage = (event) => {
       case 'trade': {
         const tradeDataArray: Array<LastPriceData> = trade.data
 
-        const map: Record<string, LastPriceReadable> = {}
+        // const map: Record<string, LastPriceReadable> = {}
 
         tradeDataArray.forEach((tradeData) => {
           if (
@@ -85,18 +86,22 @@ socket.onmessage = (event) => {
             (!priceTimestamp[tradeData.s] || priceTimestamp[tradeData.s] + 2000 < tradeData.t)
           ) {
             priceTimestamp[tradeData.s] = tradeData.t
-            map[tradeData.s] = {
+            const formatedData = {
               price: tradeData.p,
               symbol: tradeData.s,
               timestamp: tradeData.t,
               volume: tradeData.v
             }
+
+            // map[tradeData.s] = formatedData
+            pubSub.publish(`LAST_PRICE_${formatedData.symbol}`, formatedData)
+            setLastPrice(formatedData.symbol, formatedData.price, formatedData.timestamp)
           }
         })
 
-        Object.keys(map).forEach((symbol) => {
-          pubSub.publish(`LAST_PRICE_${symbol}`, map[symbol])
-        })
+        // Object.keys(map).forEach((symbol) => {
+        //   pubSub.publish(`LAST_PRICE_${symbol}`, map[symbol])
+        // })
         break
       }
       default:
@@ -123,18 +128,30 @@ socket.onerror = (error) => {
   console.error('Websocket error: ', error)
 }
 
-const subscriptionList = new Set()
+const subscriptionList = new Map<string, Set<string>>()
 
-export const lastPriceSubscribe = (symbol: string) => {
+export const lastPriceSubscribe = (symbol: string, userId:string) => {
   if (!subscriptionList.has(symbol)) {
-    subscriptionList.add(symbol)
-    sendBuffer.push(JSON.stringify({ type: 'subscribe', symbol }))
+    subscriptionList.set(symbol, new Set())
   }
+
+  if(userId) {
+    subscriptionList.get(symbol)?.add(userId)
+  }
+
+  sendBuffer.push(JSON.stringify({type: 'subscribe', symbol}))
 }
 
-export const lastPriceUnsubscribe = (symbol: string) => {
+// TODO unsubscribe user if connection loses (keep in mind the user can connect from multiple places)
+export const lastPriceUnsubscribe = (symbol: string, userId:string) => {
   if (subscriptionList.has(symbol)) {
-    sendBuffer.push(JSON.stringify({ type: 'unsubscribe', symbol }))
-    subscriptionList.delete(symbol)
+    if(userId && subscriptionList.get(symbol)?.has(userId)){
+      subscriptionList.get(symbol)?.delete(userId)
+    }
+
+    if(subscriptionList.get(symbol)?.size === 0) {
+      subscriptionList.delete(symbol)
+      sendBuffer.push(JSON.stringify({type: 'unsubscribe', symbol}))
+    }
   }
 }

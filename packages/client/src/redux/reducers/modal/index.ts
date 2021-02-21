@@ -1,11 +1,15 @@
 import { ElementType } from 'react'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { ModalPriority } from '../../../constants'
+import {ModalPriority, ModalRoutes} from '../../../constants'
 import { Modal } from '../../../types/redux/modal'
 
 const initialState: Modal = {
-  map: {}
+  map: {},
+  routes: {
+    [ModalRoutes.Note]: false,
+    [ModalRoutes.Reminder]: false
+  }
 }
 
 export const modal = createSlice({
@@ -23,6 +27,9 @@ export const modal = createSlice({
     close: (state, { payload }: PayloadAction<string>) => {
       const modalId = payload
       delete state.map[modalId]
+    },
+    setRoute: (state, {payload}: PayloadAction<{route: ModalRoutes, value: boolean}>) => {
+      state.routes[payload.route] = payload.value
     }
   }
 })

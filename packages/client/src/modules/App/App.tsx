@@ -6,11 +6,14 @@ import { grey } from '@material-ui/core/colors'
 import { Loader, ScreenLoader } from '../../components'
 import { DashboardLazy, ChartGroupsLazy } from '../lazy'
 import { CentralModal } from '../CentralModal/CentralModal'
-import { NoteModal } from '../NoteModal/NoteModal'
 import styles from './styles.module.scss'
 
 import { Menu } from './modules/Menu/Menu'
 import {Brokers} from "./modules/Brokers/Brokers";
+import {ModalRouter} from "../ModalRouter/ModalRouter";
+
+// <NoteModal />
+// <CentralModal />
 
 export const App = () => (
   <>
@@ -28,7 +31,7 @@ export const App = () => (
         </Suspense>
       </div>
     </div>
-    <NoteModal />
-    <CentralModal />
+
+    <ModalRouter/>
   </>
 )

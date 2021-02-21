@@ -125,7 +125,6 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
   const isChecked = useCallback((watchlistId: string) => usedWatchlists.has(watchlistId), [usedWatchlists])
 
   const containerClick = useCallback((event)=>{
-    event.preventDefault()
     event.stopPropagation()
   },[])
 

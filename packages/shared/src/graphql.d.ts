@@ -26,6 +26,7 @@ export type Query = {
   getChartGroups?: Maybe<Array<Maybe<ChartGroup>>>;
   getChartGroup?: Maybe<ChartGroup>;
   getNote?: Maybe<Note>;
+  getPriceAlerts?: Maybe<Array<Maybe<PriceAlert>>>;
 };
 
 
@@ -57,6 +58,11 @@ export type QueryGetPricesArgs = {
 
 export type QueryGetChartGroupArgs = {
   chartGroupId: Scalars['String'];
+};
+
+
+export type QueryGetPriceAlertsArgs = {
+  symbol: Scalars['String'];
 };
 
 export type Symbol = {
@@ -230,7 +236,18 @@ export type ChartGroupCharts = {
 export type Note = {
   __typename?: 'Note';
   user?: Maybe<Scalars['MongoID']>;
-  text: Scalars['String'];
+  text?: Maybe<Scalars['String']>;
+  _id: Scalars['MongoID'];
+  updatedAt?: Maybe<Scalars['Date']>;
+  createdAt?: Maybe<Scalars['Date']>;
+};
+
+export type PriceAlert = {
+  __typename?: 'PriceAlert';
+  user?: Maybe<Scalars['MongoID']>;
+  symbol: Scalars['String'];
+  targetPrice: Scalars['Float'];
+  actualPrice: Scalars['Float'];
   _id: Scalars['MongoID'];
   updatedAt?: Maybe<Scalars['Date']>;
   createdAt?: Maybe<Scalars['Date']>;
@@ -247,6 +264,7 @@ export type Mutation = {
   removeChartFromChartGroup: Scalars['String'];
   removeChartGroup: Scalars['String'];
   saveNote: Scalars['String'];
+  setPriceAlert?: Maybe<Scalars['String']>;
 };
 
 
@@ -299,6 +317,12 @@ export type MutationRemoveChartGroupArgs = {
 
 export type MutationSaveNoteArgs = {
   text: Scalars['String'];
+};
+
+
+export type MutationSetPriceAlertArgs = {
+  symbol: Scalars['String'];
+  targetPrice: Scalars['Float'];
 };
 
 export type Subscription = {

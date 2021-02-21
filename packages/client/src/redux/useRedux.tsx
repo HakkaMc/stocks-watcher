@@ -38,7 +38,7 @@ export function useRedux<TSelected = unknown>(
   }
 
   return {
-    dispatchers: dispatchers,
+    dispatchers,
     selectedState
   }
 }

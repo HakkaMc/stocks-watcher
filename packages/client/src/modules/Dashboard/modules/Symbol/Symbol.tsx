@@ -12,6 +12,7 @@ import { LAST_PRICE_SUBSCRIPTION, GET_QUOTE } from '../../../../gqls'
 import { SymbolDetail } from '../SymbolDetail/SymbolDetail'
 import { QuickChart } from '../QuickChart/QuickChart'
 import { WatchlistChanger } from '../WatchlistChanger/WatchlistChanger'
+import {PriceAlert} from "../PriceAlert/PriceAlert";
 
 type Props = {
   symbol: SymbolType
@@ -97,9 +98,7 @@ export const Symbol = ({ symbol }: Props) => {
           <WatchlistChanger symbolObj={symbol} />
         </Box>
         <Box>
-          <IconButton>
-            <NotificationsIcon />
-          </IconButton>
+          <PriceAlert symbol={symbol.symbol}/>
         </Box>
       </div>
       <SymbolDetail symbolObj={symbol} shown={isDetailShown} />

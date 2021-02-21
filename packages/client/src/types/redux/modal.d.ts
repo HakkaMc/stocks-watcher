@@ -9,5 +9,6 @@ export type ModalConfig = {
 export type Modal = {
   map: {
     [id: string]: ModalConfig
-  }
+  },
+  routes: Record<ModalRoutes, boolean>
 }

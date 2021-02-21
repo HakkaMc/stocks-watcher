@@ -11,7 +11,7 @@ import {
 import { grey } from '@material-ui/core/colors'
 
 import { logout } from '../../../../utils/session'
-import { ROUTES } from '../../../../constants'
+import {ModalRoutes, ROUTES} from '../../../../constants'
 import { MenuItem } from '../MenuItem/MenuItem'
 import { useRedux } from '../../../../redux/useRedux'
 import styles from './styles.module.scss'
@@ -20,7 +20,12 @@ export const Menu = () => {
   const { dispatchers } = useRedux()
 
   const showNotes = useCallback(() => {
-    dispatchers.app.toggleShowNotes()
+    // dispatchers.app.toggleShowNotes()
+    dispatchers.modal.setRoute({route: ModalRoutes.Note, value: true})
+  }, [])
+
+  const showReminder = useCallback(() => {
+    dispatchers.modal.setRoute({route: ModalRoutes.Reminder, value: true})
   }, [])
 
   return (
@@ -30,7 +35,7 @@ export const Menu = () => {
           <MenuItem Icon={<DashboardIcon color="action" />} text="Dashboard" to={ROUTES.DASHBOARD} />
           <MenuItem Icon={<TimelineIcon color="action" />} text="Chart groups" to={ROUTES.CHART_GROUPS} />
           <MenuItem Icon={<NoteIcon color="action" />} text="Notes" noActiveStyle onClick={showNotes} />
-          <MenuItem Icon={<EventIcon color="action" />} text="Reminder" noActiveStyle />
+          <MenuItem Icon={<EventIcon color="action" />} text="Reminder" noActiveStyle onClick={showReminder}/>
         </List>
       </Box>
       <Divider />

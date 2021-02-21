@@ -164,3 +164,26 @@ export const SAVE_NOTE = gql`
     saveNote(text: $text)
   }
 `
+
+export const GET_PRICE_ALERTS = gql`
+  query getPriceAlerts($symbol: String!){
+    getPriceAlerts(symbol: $symbol){
+      _id
+      symbol
+      targetPrice
+      actualPrice
+    }
+  }
+`
+
+export const SET_PRICE_ALERT = gql`
+  mutation setPriceAlert($symbol: String!, $targetPrice: Float!){
+    setPriceAlert(symbol: $symbol, targetPrice: $targetPrice)
+  }
+`
+
+export const REMOVE_PRICE_ALERT = gql`
+  mutation setPriceAlert($id: String!){
+    removePriceAlert(id: $id)
+  }
+`

@@ -173,8 +173,8 @@ export const getQuote = (symbol: string): Promise<GetQuote | undefined> =>
 
 export const getStockPrices = (
   symbol: string,
-  timestampFrom: number,
-  timestampTo: number,
+  timestampFrom: number, // seconds
+  timestampTo: number, // seconds
   range: FinnhubRange
 ): Promise<Array<{ price: number; timestamp: number }> | undefined> =>
   new Promise((resolve, reject) => {

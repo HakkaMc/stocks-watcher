@@ -4,10 +4,11 @@ import { grey } from '@material-ui/core/colors'
 import { useMutation, useQuery } from '@apollo/client'
 import { Note as NoteType } from '@sw/shared/src/graphql'
 import { Close as CloseIcon} from '@material-ui/icons'
-import { useRedux } from '../../../../redux/useRedux'
+import { useRedux} from "../../redux/useRedux";
 
 import styles from './styles.module.scss'
-import { GET_NOTE, SAVE_NOTE } from '../../../../gqls'
+import { GET_NOTE, SAVE_NOTE} from "../../gqls";
+import {ModalRoutes} from "../../constants";
 
 let saveTimoutRef: ReturnType<typeof setTimeout>
 
@@ -45,9 +46,10 @@ export const Note = () => {
 
   const close = useCallback(() => {
     save()
-    setTimeout(()=>{
-      dispatchers.app.toggleShowNotes()
-    }, 300)
+    // setTimeout(()=>{
+    //   dispatchers.app.toggleShowNotes()
+    dispatchers.modal.setRoute({route: ModalRoutes.Note, value: false})
+    // }, 300)
 
   }, [dispatchers, textareaRef, loaded, saveNote, getText])
 

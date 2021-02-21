@@ -1,66 +1,159 @@
 import SendMail from 'sendmail'
 
-import { Symbol as SymbolType } from '@sw/shared/src/graphql'
-import { pubSub } from './pubSub'
-
 import { getStockPrices } from './finnhub/finnhubClient'
-import { UserTsModel } from './database/user/schema'
-import { DashboardTsModel } from './database/dashboard/schema'
+import { UserTsType } from './database/user/schema'
+import { DashboardTsModel, DashboardTsType } from './database/dashboard/schema'
+import { ServerSettingTsModel } from './database/serverSetting/schema'
+import { SymbolTsModel, SymbolTsType } from './database/symbol/schema'
+import { ceilToMinute, getDayPoints } from '@sw/shared/src/time'
+import {PriceAlertTsModel, PriceAlertTsType} from './database/priceAlert/schema'
+import { getLastPrice } from './cache'
 
 const sendMail = SendMail({})
 
-const compute = async () => {
-  const to = new Date()
+const computeIntervalGain = async () => {
+  console.log('computeIntervalGain')
+  await ServerSettingTsModel.updateOne({}, { lastVolatilityCheckTimestamp: Date.now() }, { upsert: true })
+
+  const now = Date.now()
+  const dayPoints = getDayPoints()
+  const openedStockHours = now >= dayPoints.stockStart.getTime() && now <= dayPoints.stockEnd.getTime()
+  const to = ceilToMinute(now)
   const from = new Date(to)
-  from.setMinutes(from.getMinutes() - 10)
+  from.setMinutes(-11)
 
-  const user = await UserTsModel.findOne({ name: 'admin' })
-  const dashboard = await DashboardTsModel.findOne({ user: user?._id })
-  // @ts-ignore
-  const watchedSymbols: Array<string> = dashboard?.watchedSymbols || []
+  const watchedSymbols = new Set<string>()
+  const symbolToEmailsMap: Record<string, Set<string>> = {} // key is symbol, array is a list of emails
+  let dashboards: Array<DashboardTsType & { user: UserTsType }> = []
 
-  for (let i = 0; i < watchedSymbols.length; i++) {
-    const symbol = watchedSymbols[i]
-    // console.log(symbol)
-    const prices = await getStockPrices(
-      symbol,
-      parseInt((from.getTime() / 1000).toString()),
-      parseInt((to.getTime() / 1000).toString()),
-      '1'
-    )
+  const results = await DashboardTsModel.find({}).populate('user')
 
-    if (prices && prices.length) {
-      const startPriceObj = prices[0]
-      const endPriceObj = prices[prices.length - 1]
+  if (Array.isArray(results)) {
+    // @ts-ignore
+    dashboards = results
+  } else {
+    dashboards.push(results)
+  }
 
-      // console.log(startPriceObj, endPriceObj)
-      // console.log(new Date(startPriceObj.timestamp*1000).toLocaleString(), new Date(endPriceObj.timestamp*1000).toLocaleString())
+  dashboards.forEach((dashboard) => {
+    dashboard.watchlists?.forEach((wl) => {
+      wl.symbols?.forEach((symbol) => {
+        if (symbol) {
+          watchedSymbols.add(symbol)
 
-      const gain = (100 / startPriceObj.price) * endPriceObj.price - 100
-
-      // console.log('gain: ', symbol.symbol, gain)
-      // console.log('length: ', prices.length)
-
-      if (gain > 5 || gain < -5) {
-        // TODO - push notification
-        sendMail(
-          {
-            from: 'HakkaMc@gmail.com',
-            to: 'HakkaMc@gmail.com',
-            subject: `Rapid stock raise/fall: ${symbol} ${gain}`
-          },
-          (error: any, reply: any) => {
-            console.log(error && error.stack)
-            // console.dir(reply);
+          if (!symbolToEmailsMap[symbol]) {
+            symbolToEmailsMap[symbol] = new Set()
           }
-        )
+
+          if (dashboard.user) {
+            symbolToEmailsMap[symbol].add(dashboard.user?.email)
+          }
+        }
+      })
+    })
+  })
+
+  const watchedSymbolsArray = Object.keys(watchedSymbols)
+
+  for (let i = 0; i < watchedSymbolsArray.length; i += 1) {
+    const symbol = watchedSymbolsArray[i]
+    const symbolObj = await SymbolTsModel.findOne({ symbol })
+
+    if (symbolObj && (openedStockHours || symbolObj?.type.toLowerCase() === 'crypto')) {
+      const prices = await getStockPrices(symbolObj.symbol, from.getTime(), to.getTime(), '5')
+
+      if (prices?.length) {
+        const startPriceObj = prices[0]
+        const endPriceObj = prices[prices.length - 1]
+
+        const gain = (100 / startPriceObj.price) * endPriceObj.price - 100
+
+        if (gain > 5 || gain < -5) {
+          symbolToEmailsMap[symbolObj.symbol].forEach((email: string) => {
+            sendMail(
+              {
+                from: 'HakkaMc@gmail.com',
+                to: email,
+                subject: `Rapid stock raise/fall: ${symbolObj.symbol} ${gain}`
+              },
+              (error: any, reply: any) => {
+                console.error(error && error.stack)
+                // console.dir(reply);
+              }
+            )
+          })
+        }
       }
     }
-    // return
+  }
+}
+
+const computePriceHit = async () => {
+  console.log('computePriceHit')
+  const alerts = PriceAlertTsModel.find({}).populate('user')
+
+  if (Array.isArray(alerts)) {
+    const watchedSymbols = new Set<string>()
+    const symbolToAlertMap:Record<string, Set<PriceAlertTsType>> = {}
+
+    alerts.forEach((alert) => {
+      const symbol = alert.symbol
+
+      watchedSymbols.add(symbol)
+
+      if(!symbolToAlertMap[symbol]){
+        symbolToAlertMap[symbol] = new Set<PriceAlertTsType>()
+      }
+
+      symbolToAlertMap[symbol].add(alert)
+    })
+
+    const watchedSymbolsArray = Object.keys(watchedSymbols)
+
+    for (let i = 0; i < watchedSymbolsArray.length; i += 1) {
+      const symbol = watchedSymbolsArray[i]
+      const symbolObj = await SymbolTsModel.findOne({ symbol })
+
+      if (symbolObj) {
+        const price = await getLastPrice(symbol)
+        if (price !== undefined) {
+          symbolToAlertMap[symbol].forEach(alertObj=>{
+            if((alertObj.actualPrice<alertObj.targetPrice && price<alertObj.targetPrice) || (alertObj.actualPrice>alertObj.targetPrice && price>alertObj.targetPrice)){
+              const user = alertObj.user as UserTsType
+
+              sendMail(
+                  {
+                    from: 'HakkaMc@gmail.com',
+                    to: user.email,
+                    subject: `${symbol} hit the price: ${price}`
+                  },
+                  (error: any) => {
+                    console.error(error && error.stack)
+                  }
+              )
+
+              PriceAlertTsModel.deleteOne({_id: alertObj._id})
+            }
+          })
+        }
+      }
+    }
   }
 }
 
 export const startComputing = async () => {
-  await compute()
-  setInterval(compute, 10 * 60 * 1000)
+  const now = Date.now()
+  const setting = await ServerSettingTsModel.findOne({})
+
+  if (!setting?.lastVolatilityCheckTimestamp || (setting?.lastVolatilityCheckTimestamp || 0) < now - 10 * 60 * 1000) {
+    computeIntervalGain()
+  }
+
+  setInterval(computeIntervalGain, 10 * 60 * 1000)
+
+  if (!setting?.lastPriceHitCheckTimestamp || (setting?.lastPriceHitCheckTimestamp || 0) < now - 3 * 60 * 1000) {
+    computePriceHit()
+  }
+
+  setInterval(computePriceHit, 3 * 60 * 1000)
 }

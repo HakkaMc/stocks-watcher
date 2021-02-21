@@ -27,7 +27,8 @@
     "react-router-dom": "^5.2.0",
     "react-google-login":"^5.2.2",
     "query-string": "^6.13.8",
-    "immer": "^8.0.1"
+    "immer": "^8.0.1",
+    "react-query": "^3.9.6"
   },
   "devDependencies": {
     "node-sass": "^4.11.0",
