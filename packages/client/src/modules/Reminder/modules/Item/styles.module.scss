@@ -1,0 +1,14 @@
+.item{
+  display: flex;
+  background-color: white;
+
+  .content {
+    flex: 1 1 auto;
+  }
+
+  .rest{
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+}

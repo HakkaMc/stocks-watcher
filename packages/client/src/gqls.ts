@@ -6,6 +6,7 @@ export const GET_DASHBOARD = gql`
       watchlists{
         _id
         name
+        hidden
         symbols
         symbolsData {
           _id
@@ -81,6 +82,13 @@ export const CREATE_WATCHLIST = gql`
     createWatchlist(watchlist: $watchlist)
   }
 `
+
+export const CHANGE_WATCHLIST_SETTINGS = gql`
+  mutation ChangeWatchlistSettings($id: String!, $hidden: Boolean, $name: String){
+    changeWatchlistSettings(id: $id, hidden:$hidden, name:$name)
+  }
+`
+
 export const GET_PRICES = gql`
   query($symbol: String!, $timestampFrom: Float, $timestampTo: Float, $range: String) {
     getPrices(symbol: $symbol, timestampFrom: $timestampFrom, timestampTo: $timestampTo, range: $range) {
@@ -108,6 +116,7 @@ export const GET_CHART_GROUPS = gql`
     }
   }
 `
+
 export const GET_CHART_GROUP = gql`
   query($chartGroupId: String!) {
     getChartGroup(chartGroupId: $chartGroupId) {
@@ -185,5 +194,28 @@ export const SET_PRICE_ALERT = gql`
 export const REMOVE_PRICE_ALERT = gql`
   mutation setPriceAlert($id: String!){
     removePriceAlert(id: $id)
+  }
+`
+
+export const GET_REMINDERS = gql`
+  query {
+    getReminders{
+      _id
+      title
+      text
+      timestamp
+    }
+  }
+`
+
+export const SET_REMINDER = gql`
+  mutation setReminder($title: String!, $text: String!, $timestamp: Float!){
+    setReminder(title: $title, text: $text, timestamp: $timestamp)
+  }
+`
+
+export const REMOVE_REMINDER = gql`
+  mutation removeReminder($id: String!){
+    removeReminder(id: $id)
   }
 `

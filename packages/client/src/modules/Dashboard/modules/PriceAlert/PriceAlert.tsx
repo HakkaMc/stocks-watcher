@@ -22,7 +22,9 @@ export const PriceAlert = ({symbol}: Props) => {
   const [show, setShow] = useState(false)
   const form = useForm<FormValues>()
 
-    const [getPriceAlerts, priceAlertsResponse] = useLazyQuery<{getPriceAlerts: Array<PriceAlertType>}>(GET_PRICE_ALERTS)
+    const [getPriceAlerts, priceAlertsResponse] = useLazyQuery<{getPriceAlerts: Array<PriceAlertType>}>(GET_PRICE_ALERTS, {
+        fetchPolicy: 'no-cache'
+    })
     const [savePriceAlert] = useMutation(SET_PRICE_ALERT, {
         refetchQueries: [
             {
@@ -105,7 +107,7 @@ export const PriceAlert = ({symbol}: Props) => {
               <table>
                 <tbody>
                   {priceAlertsResponse.data?.getPriceAlerts.map((pa) => (
-                    <tr key={`${pa.actualPrice}_${pa.targetPrice}`}>
+                    <tr key={pa._id}>
                       <td>{pa?.targetPrice}</td>
                       <td>
                         <IconButton onClick={remove(pa?._id)}>

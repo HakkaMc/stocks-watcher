@@ -1,28 +1,28 @@
-export const roundToMidnight = (date: Date|number) => {
-    const newDate = new Date(date)
-    newDate.setHours(0)
-    newDate.setMinutes(0)
-    newDate.setSeconds(0)
-    newDate.setMilliseconds(0)
+export const roundToMidnight = (date: Date | number) => {
+  const newDate = new Date(date)
+  newDate.setHours(0)
+  newDate.setMinutes(0)
+  newDate.setSeconds(0)
+  newDate.setMilliseconds(0)
 
   return newDate
 }
 
-export const floorToMinute = (date: Date|number) => {
-    const newDate = new Date(date)
-    newDate.setSeconds(0)
-    newDate.setMilliseconds(0)
+export const floorToMinute = (date: Date | number) => {
+  const newDate = new Date(date)
+  newDate.setSeconds(0)
+  newDate.setMilliseconds(0)
 
   return newDate
 }
 
-export const ceilToMinute = (date: Date|number) => {
-    const newDate = new Date(date)
-    newDate.setMinutes(1)
-    newDate.setSeconds(0)
-    newDate.setMilliseconds(0)
+export const ceilToMinute = (date: Date | number) => {
+  const newDate = new Date(date)
+  newDate.setMinutes(newDate.getMinutes() + 1)
+  newDate.setSeconds(0)
+  newDate.setMilliseconds(0)
 
-    return newDate
+  return newDate
 }
 
 export const getDayPoints = (date?: Date) => {
@@ -30,7 +30,7 @@ export const getDayPoints = (date?: Date) => {
 
   const midnightToday = roundToMidnight(localDate)
   const midnightTomorrow = new Date(midnightToday)
-  midnightTomorrow.setDate(1)
+  midnightTomorrow.setDate(midnightTomorrow.getDate() + 1)
 
   const stockStart = new Date(midnightToday)
   stockStart.setHours(15)

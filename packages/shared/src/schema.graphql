@@ -14,6 +14,7 @@ type Query {
   getChartGroup(chartGroupId: String!): ChartGroup
   getNote: Note
   getPriceAlerts(symbol: String!): [PriceAlert]
+  getReminders: [Reminder]
 }
 
 type Symbol {
@@ -132,6 +133,7 @@ type Dashboard {
 type DashboardWatchlists {
   name: String!
   symbols: [String]!
+  hidden: Boolean!
   _id: MongoID
   symbolsData: [Symbol]
 }
@@ -200,6 +202,18 @@ type PriceAlert {
   symbol: String!
   targetPrice: Float!
   actualPrice: Float!
+  notifiedTimestamp: Float!
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+type Reminder {
+  user: MongoID
+  title: String!
+  text: String
+  timestamp: Float!
+  active: Boolean!
   _id: MongoID!
   updatedAt: Date
   createdAt: Date
@@ -208,6 +222,7 @@ type PriceAlert {
 type Mutation {
   saveSymbolToDashboard(symbol: String!, watchlist: String!): String
   changeSymbolWatchlist(symbol: String!, watchlist: String, add: Boolean!): String
+  changeWatchlistSettings(id: String!, hidden: Boolean, name: String): String
   createWatchlist(watchlist: String!): String
   removeSymbolFromDashboard(symbol: String!): String
   createChartGroup(name: String!): ChartGroup
@@ -217,6 +232,8 @@ type Mutation {
   saveNote(text: String!): String!
   setPriceAlert(symbol: String!, targetPrice: Float!): String
   removePriceAlert(id: String!): String
+  setReminder(title: String!, text: String, timestamp: Float!): String
+  removeReminder(id: String!): String
 }
 
 type Subscription {

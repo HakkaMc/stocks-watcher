@@ -7,6 +7,7 @@ const PriceAlertSchema = createSchema({
     symbol: Type.string({required: true}),
     targetPrice: Type.number({required: true}),
     actualPrice: Type.number({required: true}),
+    notifiedTimestamp: Type.number({required: true, default: 0})
 }, { _id: true, timestamps: true })
 
 export type PriceAlertTsType = ExtractProps<typeof PriceAlertSchema>

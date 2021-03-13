@@ -21,5 +21,14 @@
         //top: 0;
       }
     }
+
+    .content{
+      flex: 1 1 auto;
+      overflow: auto;
+
+      .addReminderIconWrapper{
+        text-align: right;
+      }
+    }
   }
 }

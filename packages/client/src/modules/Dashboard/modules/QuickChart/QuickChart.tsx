@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import HighchartsStock from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
-import { useSubscription, useMutation, useQuery } from '@apollo/client'
+import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
 import { GetPrices } from '@sw/shared/src/graphql'
 import { GET_PRICES } from '../../../../gqls'
 
@@ -11,6 +11,7 @@ type Props = {
   openPrice?: number
   symbol: string
   lastPriceTimestamp?: number
+  forceRefreshTrigger: number
 }
 
 const tmpTto = new Date()
@@ -49,6 +50,9 @@ nextMidnigh.setDate(nextMidnigh.getDate() + 1)
 const aftermarketStopTime = new Date(midnight)
 aftermarketStopTime.setHours(1)
 aftermarketStopTime.setMinutes(45)
+
+const nextAftermarketStopTime = new Date(aftermarketStopTime)
+nextAftermarketStopTime.setDate(nextAftermarketStopTime.getDate()+1)
 
 const premarketStartTime = new Date(midnight)
 premarketStartTime.setHours(10)
@@ -121,11 +125,19 @@ const options = {
   xAxis: {
     type: 'datetime',
     visible: true,
-    range: 24 * 60 * 60 * 1000,
-    max: nextMidnigh.getTime(),
+    // range: 24 * 60 * 60 * 1000,
+    min: stockPreviousEndTime.getTime()-1*60*60*1000,
+    max: nextAftermarketStopTime.getTime()+1*60*60*1000,
     plotLines: [
       {
         value: midnight.getTime(),
+        color: 'black',
+        dashStyle: 'shortdash',
+        width: 1,
+        zIndex: 1
+      },
+      {
+        value: nextMidnigh.getTime(),
         color: 'black',
         dashStyle: 'shortdash',
         width: 1,
@@ -146,15 +158,22 @@ const options = {
         zIndex: 1
       },
       {
-        value: premarketStartTime.getTime(),
+        value: nextAftermarketStopTime.getTime(),
         color: 'orange',
         dashStyle: 'shortdash',
         width: 1,
         zIndex: 1
       },
       {
-        value: stockStartTime.getTime(),
+        value: premarketStartTime.getTime(),
         color: 'blue',
+        dashStyle: 'shortdash',
+        width: 1,
+        zIndex: 1
+      },
+      {
+        value: stockStartTime.getTime(),
+        color: 'green',
         dashStyle: 'shortdash',
         width: 1,
         zIndex: 1
@@ -166,7 +185,12 @@ const options = {
         width: 1,
         zIndex: 1
       }
-    ]
+    ],
+    // breaks: [{
+    //   from: aftermarketStopTime,
+    //   to: premarketStartTime,
+    //   breakSize: 1
+    // }]
   },
   yAxis: {
     visible: false
@@ -178,60 +202,63 @@ let lastPriceCache = {
   price: -1
 }
 
-export const QuickChart = ({ lastPrice, previousClose, openPrice, symbol, lastPriceTimestamp }: Props) => {
+export const QuickChart = ({
+  lastPrice,
+  previousClose,
+  openPrice,
+  symbol,
+  lastPriceTimestamp,
+  forceRefreshTrigger
+}: Props) => {
   const [chart, setChart] = useState<any>()
-  // const [initDataSet, setInitDataSet] = useState(false)
-  const { data, loading, error } = useQuery<{ getPrices: GetPrices }>(GET_PRICES, {
+
+  const pricesResponse = useQuery<{ getPrices: GetPrices }>(GET_PRICES, {
     variables: { symbol, range: '30', timestampFrom: tmpTFrom.getTime(), timestampTo: tmpTto.getTime() }
   })
 
-  // useEffect(()=>{
-  //     if(chart && previousClose && lastPrice && openPrice) {
-  // const serie: any = chart?.series[0]
-  //
-  // if(!initDataSet){
-  //     setInitDataSet(true)
-  //     serie?.addPoint(previousClose)
-  //     serie?.addPoint(openPrice)
-  // }
-  //
-  // serie?.addPoint(lastPrice)
-  // }
-  // },[chart, previousClose, lastPrice, initDataSet, openPrice])
+  useEffect(() => {
+    pricesResponse.refetch()
+  }, [pricesResponse.refetch, forceRefreshTrigger])
 
   useEffect(() => {
-    if (!loading && data && !error && chart) {
-      const newData = data.getPrices?.priceArray?.map((priceObj) => [priceObj?.timestamp, priceObj?.price])
-
-      // console.log(newData)
+    if (!pricesResponse.loading && pricesResponse.data && !pricesResponse.error && chart) {
+      const newData = pricesResponse.data.getPrices?.priceArray?.map((priceObj) => [
+        priceObj?.timestamp,
+        priceObj?.price
+      ])
 
       if (newData) {
-        chart.series[0].setData(newData, true, false, false)
+        chart.series[0].setData(newData, true, false, true)
       }
     }
-  }, [data, loading, error, chart])
-
-  // useEffect(()=>{
-  //     if(chart && lastPrice && lastPriceTimestamp){
-  //         chart.series[0].addPoint([lastPriceTimestamp, lastPrice])
-  //     }
-  // }, [chart, lastPrice, lastPriceTimestamp])
+  }, [pricesResponse, chart])
 
   useEffect(() => {
-    const intervalRef = setInterval(() => {
-      if (chart && lastPriceCache.timestamp !== -1) {
-        chart.series[0].addPoint([lastPriceCache.timestamp, lastPriceCache.price])
-        lastPriceCache = {
-          timestamp: -1,
-          price: -1
+    if (chart && lastPriceTimestamp && lastPrice) {
+      const timestamp = Math.floor(lastPriceTimestamp / 1000 / 60 / 5) * 5 * 60 * 1000
+
+      let updated = false
+
+      const rawData = chart.series[0]?.options?.data||[]
+
+      if(Array.isArray(rawData) && rawData.length) {
+        const lastPoint = rawData[rawData.length-1]
+        if(lastPoint[0]===timestamp){
+          lastPoint[1] = lastPrice
+          updated = true
         }
       }
-    }, 1000)
 
-    return () => {
-      clearInterval(intervalRef)
+      if (!updated) {
+        rawData.push([timestamp, lastPrice])
+        updated = true
+      }
+
+      if(updated){
+        chart.series[0].setData([...rawData], true, false, true)
+      }
     }
-  }, [])
+  }, [chart, lastPrice, lastPriceTimestamp, symbol])
 
   lastPriceCache = {
     timestamp: lastPriceTimestamp || -1,

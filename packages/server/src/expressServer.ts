@@ -18,11 +18,13 @@ export const session = expressSession({
   name: 'API_SESSION_ID',
   secret: 'stocks-watcher', // TODO - better secret code
   resave: true,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
+    path: '/',
     secure: false,
     sameSite: false,
-    httpOnly: false
+    httpOnly: false,
+    maxAge: undefined
   },
   store: new MongoStore({
     mongooseConnection: mongoose.connection
@@ -92,10 +94,12 @@ expressServer.get('/auth/google/callback', async (req, res) => {
     req.session.userId = user._id
   }
 
-  console.log('userId ', req.session.userId, ' saved')
+
 
   req.session.cookie.expires = new Date(userInfo.accessTokenExpiration)
   req.session.cookie.maxAge = userInfo.accessTokenExpiration - Date.now()
+
+  console.log('userId ', req.session.userId, ' saved', req.session.cookie.expires, req.session.cookie.maxAge)
 
   res.redirect(
     `https://localhost:4001/auth/success?accessToken=${userInfo.accessToken}&refreshToken=${userInfo.refreshToken}&accessTokenExpiration=${userInfo.accessTokenExpiration}`
@@ -107,7 +111,8 @@ expressServer.post('/auth/refresh', async (req, res) => {
   const { refreshToken } = req.body
   const { userId } = req.session
 
-  // console.log('refresh: ', refreshToken, accessToken, userId)
+  console.log('============================================')
+  console.log('refresh: ', refreshToken, accessToken, userId)
 
   if(!userId || !accessToken || !refreshToken){
     console.log('Refresh session failed')

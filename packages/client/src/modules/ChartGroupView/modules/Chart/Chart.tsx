@@ -57,7 +57,18 @@ premarketStartTime.setMinutes(0)
 const options = {
   chart: {
     // width: '100%'
-    renderTo: 'container'
+    renderTo: 'container',
+    // zoomType: 'xy',
+    // zoomKey: 'shift',
+    panning: {
+      enabled: true,
+      type: 'xy'
+    }
+    // panKey: 'ctrl',
+  },
+  mapNavigation: {
+    enabled: true,
+    enableMouseWheelZoom: true
   },
   // title: {
   //   text: `${tmpTFrom.toLocaleString()} - ${tmpTto.toLocaleString()}`
@@ -67,35 +78,50 @@ const options = {
     timezoneOffset: tmpTFrom.getTimezoneOffset(),
     useUTC: true
   },
-  // plotOptions:{
-  //     series: {
-  //         enableMouseTracking: false,
-  //         marker: {
-  //             enabled: false,
-  //         }
-  //     },
-  //     line: {
-  //         marker: {
-  //             states: {
-  //                 hover: {
-  //                     marker: {
-  //                         enabled: false
-  //                     }
-  //                 }
-  //             },
-  //             hover: {
-  //                 marker: {
-  //                     enabled: false
-  //                 }
-  //             }
-  //         }
-  //     }
-  // },
+  plotOptions: {
+    // pointStart:  tmpTFrom.getTime(),
+    // pointStart: {
+    //   x: tmpTFrom.getTime(),
+    //   y: 0
+    // }
+    // pointStart: Date.UTC(2020, 0, 1),
+    //     series: {
+    //         enableMouseTracking: false,
+    //         marker: {
+    //             enabled: false,
+    //         }
+    //     },
+    //     line: {
+    //         marker: {
+    //             states: {
+    //                 hover: {
+    //                     marker: {
+    //                         enabled: false
+    //                     }
+    //                 }
+    //             },
+    //             hover: {
+    //                 marker: {
+    //                     enabled: false
+    //                 }
+    //             }
+    //         }
+    //     }
+  },
   series: [
     {
       lineWidth: 1,
       type: 'spline',
-      data: []
+      data: [],
+      dragDrop: {
+        draggableY: false,
+        draggableX: false
+      },
+      softThreshold: false
+      // pointStart: [
+      //   tmpTFrom.getTime(),
+      //   0
+      // ]
       // allowPointSelect: false,
       // description: undefined,
       // name: undefined,
@@ -109,6 +135,14 @@ const options = {
       //     }
       // }
     }
+    // {
+    //   data: [
+    //     {
+    //       x: new Date('2016-01-01 00:00:00').getTime(),
+    //       y: 0
+    //     }
+    //   ]
+    // },
   ],
   // navigator: {
   //     enabled: false
@@ -128,6 +162,8 @@ const options = {
     // tickmarkPlacement: {
     //     pointStart: tmpTFrom.getTime()
     // },
+    // softMin: new Date('2016-01-01 00:00:00').getTime(),
+    // min: new Date('2016-01-01 00:00:00').getTime(),
     plotLines: [
       {
         value: midnight.getTime(),
@@ -171,19 +207,33 @@ const options = {
         width: 1,
         zIndex: 1
       }
-    ]
+    ],
+    resize: {
+      enabled: true
+    },
+    endOnTick: false,
+    startOnTick: false
+  },
+  yAxis: {
+    // visible: false
+    // min: 0,
+    resize: {
+      enabled: true
+    },
+    endOnTick: false,
+    startOnTick: false
   }
-  // yAxis: {
-  //     visible: false
-  // },
 }
 
-let lastPriceCache = {
-  timestamp: -1,
-  price: -1
-}
+// let lastPriceCache = {
+//   timestamp: -1,
+//   price: -1
+// }
+
 
 export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }: Props) => {
+  let wheelEventInitialized = false
+
   const [chart, setChart] = useState<any>()
   // const [initDataSet, setInitDataSet] = useState(false)
 
@@ -196,29 +246,160 @@ export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }:
   }>(LAST_PRICE_SUBSCRIPTION, { variables: { symbol } })
 
   useEffect(() => {
-    const intervalRef = setInterval(() => {
-      if (chart && lastPriceCache.timestamp !== -1) {
-        chart.series[0].addPoint([lastPriceCache.timestamp, lastPriceCache.price])
-        lastPriceCache = {
-          timestamp: -1,
-          price: -1
-        }
-      }
-    }, 1000)
+    if (chart) {
+      // chart.container.addEventListener('mousemove', (event: any) => {
+      //
+      // })
 
-    return () => {
-      clearInterval(intervalRef)
+      // console.log(chart.container.querySelector('svg').querySelector('rec'))
+
+      // const ref:any = setInterval(()=>{
+      // const rectangles = chart.container.querySelectorAll('.highcharts-plot-background')
+      //
+      // const svgObject = chart.container.querySelector('svg')
+      // const layer = svgObject.getElementsByTagName('rect')
+      // // const layer = svgObject.querySelector('rect')
+      //
+      // // console.log(svgObject)
+      //
+      // if (layer && layer.length) {
+      //   // const rectanglesArray = Array.from(rectangles)
+      //   console.log(rectangles.item(0))
+      //   rectangles.item(0).addEventListener(
+      //     'mousedown',
+      //     () => {
+      //       console.log('mouse down')
+      //     },
+      //     false
+      //   )
+      //
+      //   // clearInterval(ref)
+      //   console.log('Nasel sem: ', layer[1])
+      //
+      //   layer[1].addEventListener(
+      //     'mousedown',
+      //     (event: any) => {
+      //       console.log('mouse down')
+      //     },
+      //     false
+      //   )
+      //
+      //   // console.log(chart.container)
+      // }
+      // console.log('did mount ', symbol, wheelEventInitialized)
+
+      if (!wheelEventInitialized) {
+        wheelEventInitialized = true
+        // console.log('init zoom ', symbol)
+        chart.container.addEventListener('wheel', (event: any) => {
+          // layer[1].addEventListener('wheel', (event: any) => {
+          chart.showResetZoom()
+
+          const containerBounds = event.target.getBoundingClientRect()
+          const { width } = containerBounds
+          const mouseX = event.clientX
+          const mousePercentage = (100 / width) * mouseX
+
+          // console.log(event.target.getBoundingClientRect())
+
+          // console.log(event.clientX, event.clientY)
+
+          const delta = Math.sign(event.deltaY)
+
+          // console.log(delta)
+
+          const xExtremes = chart.xAxis[0].getExtremes()
+          const yExtremes = chart.yAxis[0].getExtremes()
+
+          const xPercent = ((xExtremes.max - xExtremes.min) / 100) * 20
+
+          // console.log(xExtremes.min, xExtremes.min)
+
+          if (delta < 0) {
+            const right = (xPercent / 100) * (100 - mousePercentage)
+            const left = (xPercent / 100) * mousePercentage
+
+            let from = xExtremes.min + left
+            let to = xExtremes.max - right
+
+            from = Math.max(from, xExtremes.dataMin - (xExtremes.dataMax - xExtremes.dataMin) / 2)
+            to = Math.min(to, xExtremes.dataMax + (xExtremes.dataMax - xExtremes.dataMin) / 2)
+
+            chart.xAxis[0].setExtremes(from, to)
+          } else {
+            let from = xExtremes.min - xPercent
+            let to = xExtremes.max + xPercent
+
+            from = Math.max(from, xExtremes.dataMin - (xExtremes.dataMax - xExtremes.dataMin) / 2)
+            to = Math.min(to, xExtremes.dataMax + (xExtremes.dataMax - xExtremes.dataMin) / 2)
+
+            chart.xAxis[0].setExtremes(from, to)
+
+            if (yExtremes) {
+              const yBuffer = ((yExtremes.dataMax - yExtremes.dataMin) / 100) * 10
+
+              chart.yAxis[0].setExtremes(yExtremes.dataMin - yBuffer, yExtremes.dataMax + yBuffer)
+            }
+
+            // chart.redraw(false)
+          }
+
+          // console.log('wheel: ', delta)
+        })
+      }
+      // }, 500)
+
+      // const layer = svgObject.querySelector('rec')
+      // console.log(svgObject)
+
+      // console.log(layer)
+
+      // const layer = chart.container.querySelector('svg').querySelector('rec')
     }
-  }, [])
+  }, [chart?.container])
+
+  // useEffect(() => {
+  //   const intervalRef = setInterval(() => {
+  //     if (chart && lastPriceCache.timestamp !== -1) {
+  //       chart.series[0].addPoint([lastPriceCache.timestamp, lastPriceCache.price])
+  //       lastPriceCache = {
+  //         timestamp: -1,
+  //         price: -1
+  //       }
+  //     }
+  //   }, 1000)
+  //
+  //   return () => {
+  //     clearInterval(intervalRef)
+  //   }
+  // }, [])
 
   useEffect(() => {
-    if (lastPriceResponse.data?.lastPrice) {
-      lastPriceCache = {
-        price: lastPriceResponse.data?.lastPrice.price,
-        timestamp: lastPriceResponse.data?.lastPrice.timestamp
+    if (chart && lastPriceResponse.data?.lastPrice) {
+      const timestamp = Math.floor(lastPriceResponse.data?.lastPrice.timestamp / 1000 / 60) * 60 * 1000
+
+      let updated = false
+
+      const rawData = chart.series[0]?.options?.data||[]
+
+      if(Array.isArray(rawData) && rawData.length) {
+        const lastPoint = rawData[rawData.length-1]
+        if(lastPoint[0]===timestamp){
+          lastPoint[1] = lastPriceResponse.data?.lastPrice.price
+          updated = true
+        }
+      }
+
+      if (!updated) {
+        rawData.push([timestamp, lastPriceResponse.data?.lastPrice.price])
+        updated = true
+      }
+
+      if(updated){
+        chart.series[0].setData([...rawData], true, false, true)
       }
     }
-  }, [lastPriceResponse.data])
+  }, [chart, lastPriceResponse.data])
 
   useEffect(() => {
     if (chart) {
@@ -240,7 +421,16 @@ export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }:
       })
 
       if (newData) {
-        chart.series[0].setData(newData, true, false, false)
+        chart.series[0].setData(newData, true, false, true)
+        // chart.xAxis[0].setExtremes(newData[0][0], newData[newData.length-1][0])
+
+        // chart.series[0].setStartPoint({x: newData[0][0]})
+        // chart.series[0].update({
+        //   pointStart: {x:newData[0][0]}
+        // })
+        // chart.series[1].update({
+        //   pointStart: {x:newData[0][0]}
+        // })
         // setInitDataSet(true)
       }
     }

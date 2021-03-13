@@ -6,6 +6,7 @@
   display: flex;
   align-items: center;
   padding: 5px 0;
+  flex-wrap: wrap;
 
   //& > *:not(:last-child){
   //  margin-right: 10px;
@@ -68,3 +69,4 @@
     //}
   }
 }
+

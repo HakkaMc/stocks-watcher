@@ -27,6 +27,7 @@ export type Query = {
   getChartGroup?: Maybe<ChartGroup>;
   getNote?: Maybe<Note>;
   getPriceAlerts?: Maybe<Array<Maybe<PriceAlert>>>;
+  getReminders?: Maybe<Array<Maybe<Reminder>>>;
 };
 
 
@@ -173,6 +174,7 @@ export type DashboardWatchlists = {
   __typename?: 'DashboardWatchlists';
   name: Scalars['String'];
   symbols: Array<Maybe<Scalars['String']>>;
+  hidden?: Maybe<Scalars['Boolean']>;
   _id?: Maybe<Scalars['MongoID']>;
   symbolsData?: Maybe<Array<Maybe<Symbol>>>;
 };
@@ -248,6 +250,19 @@ export type PriceAlert = {
   symbol: Scalars['String'];
   targetPrice: Scalars['Float'];
   actualPrice: Scalars['Float'];
+  notifiedTimestamp: Scalars['Float'];
+  _id: Scalars['MongoID'];
+  updatedAt?: Maybe<Scalars['Date']>;
+  createdAt?: Maybe<Scalars['Date']>;
+};
+
+export type Reminder = {
+  __typename?: 'Reminder';
+  user?: Maybe<Scalars['MongoID']>;
+  title: Scalars['String'];
+  text?: Maybe<Scalars['String']>;
+  timestamp: Scalars['Float'];
+  active: Scalars['Boolean'];
   _id: Scalars['MongoID'];
   updatedAt?: Maybe<Scalars['Date']>;
   createdAt?: Maybe<Scalars['Date']>;
@@ -257,6 +272,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   saveSymbolToDashboard?: Maybe<Scalars['String']>;
   changeSymbolWatchlist?: Maybe<Scalars['String']>;
+  changeWatchlistSettings?: Maybe<Scalars['String']>;
   createWatchlist?: Maybe<Scalars['String']>;
   removeSymbolFromDashboard?: Maybe<Scalars['String']>;
   createChartGroup?: Maybe<ChartGroup>;
@@ -265,6 +281,9 @@ export type Mutation = {
   removeChartGroup: Scalars['String'];
   saveNote: Scalars['String'];
   setPriceAlert?: Maybe<Scalars['String']>;
+  removePriceAlert?: Maybe<Scalars['String']>;
+  setReminder?: Maybe<Scalars['String']>;
+  removeReminder?: Maybe<Scalars['String']>;
 };
 
 
@@ -278,6 +297,13 @@ export type MutationChangeSymbolWatchlistArgs = {
   symbol: Scalars['String'];
   watchlist?: Maybe<Scalars['String']>;
   add: Scalars['Boolean'];
+};
+
+
+export type MutationChangeWatchlistSettingsArgs = {
+  id: Scalars['String'];
+  hidden?: Maybe<Scalars['Boolean']>;
+  name?: Maybe<Scalars['String']>;
 };
 
 
@@ -323,6 +349,23 @@ export type MutationSaveNoteArgs = {
 export type MutationSetPriceAlertArgs = {
   symbol: Scalars['String'];
   targetPrice: Scalars['Float'];
+};
+
+
+export type MutationRemovePriceAlertArgs = {
+  id: Scalars['String'];
+};
+
+
+export type MutationSetReminderArgs = {
+  title: Scalars['String'];
+  text?: Maybe<Scalars['String']>;
+  timestamp: Scalars['Float'];
+};
+
+
+export type MutationRemoveReminderArgs = {
+  id: Scalars['String'];
 };
 
 export type Subscription = {

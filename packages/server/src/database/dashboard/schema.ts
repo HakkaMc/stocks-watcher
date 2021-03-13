@@ -6,7 +6,8 @@ import { SymbolSchema, SymbolTsModel, SymbolTsType, symbolGraphql } from '../sym
 export const Watchlist = createSchema(
   {
     name: Type.string({ required: true }),
-    symbols: Type.array({ required: true }).of(Type.string())
+    symbols: Type.array({ required: true }).of(Type.string()),
+    hidden: Type.boolean({ required: true, default: false })
   },
   {
     _id: true,
@@ -38,14 +39,12 @@ export const DashboardSchema = createSchema(
 )
 
 Watchlist.virtual('symbolsData').get(async function () {
-    // @ts-ignore
-    const symbolArray = this?.symbols || []
+  // @ts-ignore
+  const symbolArray = this?.symbols || []
 
-    const symbolsData = await SymbolTsModel.find(
-        {symbol: { $in: symbolArray}}
-    );
+  const symbolsData = await SymbolTsModel.find({ symbol: { $in: symbolArray } })
 
-    return symbolsData
+  return symbolsData
 })
 
 export type DashboardTsType = ExtractProps<typeof DashboardSchema>
@@ -55,7 +54,7 @@ export const DashboardTsModel = typedModel('Dashboard', DashboardSchema)
 export const dashboardGraphql = composeMongoose(DashboardTsModel)
 
 dashboardGraphql.getFieldOTC('watchlists').addFields({
-    symbolsData: {
-        type: [symbolGraphql]
-    }
+  symbolsData: {
+    type: [symbolGraphql]
+  }
 })

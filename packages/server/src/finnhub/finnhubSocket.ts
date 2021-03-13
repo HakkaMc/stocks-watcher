@@ -1,4 +1,4 @@
-import { w3cwebsocket as WebSocket } from 'websocket'
+import { w3cwebsocket as WebSocket, client as Websocket2 } from 'websocket'
 import { finnhubWsUrl, token } from '../constants'
 import { pubSub } from '../pubSub'
 import {setLastPrice} from '../cache'
@@ -49,84 +49,136 @@ type Trade = {
   data: Array<LastPriceData>
 }
 
-let socketIsOpened = false
 const priceTimestamp: Record<string, number> = {}
-const sendBuffer: Array<any> = []
-export const socket = new WebSocket(`${finnhubWsUrl}?token=${token}`)
 
-socket.onopen = () => {
-  console.log('Finnhub socket opened')
-  socketIsOpened = true
+const processLastPrice = (tradeDataArray: Array<LastPriceData>) => {
+  tradeDataArray.forEach((tradeData) => {
+    if (
+        (!tradeData.c || tradeData.c?.length === 0) &&
+        (!priceTimestamp[tradeData.s] || priceTimestamp[tradeData.s] + 2000 < tradeData.t)
+    ) {
+      priceTimestamp[tradeData.s] = tradeData.t
+      const formatedData = {
+        price: tradeData.p,
+        symbol: tradeData.s,
+        timestamp: tradeData.t,
+        volume: tradeData.v
+      }
+
+      // map[tradeData.s] = formatedData
+      pubSub.publish(`LAST_PRICE_${formatedData.symbol}`, formatedData)
+      setLastPrice(formatedData.symbol, formatedData.price, formatedData.timestamp)
+    }
+  })
+}
+
+let socketIsOpened = false
+
+const sendBuffer: Array<any> = []
+// export const socket = new WebSocket(`${finnhubWsUrl}?token=${token}`)
+//
+// socket.onopen = () => {
+//   console.log('Finnhub socket opened')
+//   socketIsOpened = true
+//
+//   setInterval(() => {
+//     if (socketIsOpened) {
+//       while (sendBuffer.length) {
+//         // console.log('send buffer')
+//         socket.send(sendBuffer.pop())
+//       }
+//     } else {
+//       // console.log('socket is closed')
+//     }
+//   }, 1000)
+// }
+//
+// socket.onmessage = (event) => {
+//   if (typeof event.data === 'string') {
+//     const trade: Trade = JSON.parse(event.data)
+//
+//     switch (trade.type) {
+//       case 'trade': {
+//         const tradeDataArray: Array<LastPriceData> = trade.data
+//         processLastPrice(tradeDataArray)
+//         break
+//       }
+//       default:
+//         break
+//     }
+//   }
+// }
+
+// socket.onclose = () => {
+//   console.log('Finnhub socked closed')
+//   socketIsOpened = false
+// }
+//
+// socket.onerror = (error) => {
+//   console.error('Websocket error: ', error)
+// }
+
+const socket2 = new Websocket2()
+
+socket2.on('connectFailed', (error)=>{
+  console.error('Websocket connect failed', error)
+})
+
+socket2.on('connect', (connection)=>{
+  console.log('Websocket connected')
+
+  connection.on('error', (error)=>{
+    console.error('Websocket connection failed')
+
+    setTimeout(()=>{
+      connectWebsocket()
+    }, 1000)
+  })
+
+  connection.on('close', ()=>{
+    console.error('Websocket connection closed')
+  })
+
+  connection.on('message', event=>{
+    // console.log('websocket message type: ', event.type)
+    if (event.type === 'utf8') {
+      const rawData = event.utf8Data
+
+      // console.log('raw data: ', rawData)
+
+      if (typeof rawData === 'string') {
+        const trade: Trade = JSON.parse(rawData)
+
+        switch (trade.type) {
+          case 'trade': {
+            const tradeDataArray: Array<LastPriceData> = trade.data
+            processLastPrice(tradeDataArray)
+            break
+          }
+          default:
+            break
+        }
+      }
+    }
+  })
 
   setInterval(() => {
-    if (socketIsOpened) {
+    if (connection.connected) {
       while (sendBuffer.length) {
         // console.log('send buffer')
-        socket.send(sendBuffer.pop())
+        connection.sendUTF(sendBuffer.pop())
       }
     } else {
       // console.log('socket is closed')
     }
   }, 1000)
+})
+
+const connectWebsocket = () => {
+  socket2.connect(`${finnhubWsUrl}?token=${token}`)
 }
 
-socket.onmessage = (event) => {
-  if (typeof event.data === 'string') {
-    const trade: Trade = JSON.parse(event.data)
-
-    switch (trade.type) {
-      case 'trade': {
-        const tradeDataArray: Array<LastPriceData> = trade.data
-
-        // const map: Record<string, LastPriceReadable> = {}
-
-        tradeDataArray.forEach((tradeData) => {
-          if (
-            (!tradeData.c || tradeData.c?.length === 0) &&
-            (!priceTimestamp[tradeData.s] || priceTimestamp[tradeData.s] + 2000 < tradeData.t)
-          ) {
-            priceTimestamp[tradeData.s] = tradeData.t
-            const formatedData = {
-              price: tradeData.p,
-              symbol: tradeData.s,
-              timestamp: tradeData.t,
-              volume: tradeData.v
-            }
-
-            // map[tradeData.s] = formatedData
-            pubSub.publish(`LAST_PRICE_${formatedData.symbol}`, formatedData)
-            setLastPrice(formatedData.symbol, formatedData.price, formatedData.timestamp)
-          }
-        })
-
-        // Object.keys(map).forEach((symbol) => {
-        //   pubSub.publish(`LAST_PRICE_${symbol}`, map[symbol])
-        // })
-        break
-      }
-      default:
-        break
-    }
-  }
-}
-
-socket.onclose = () => {
-  console.log('Finnhub socked closed')
-  socketIsOpened = false
-}
-
-// const socketSend = (data:any) =>{
-//     // if(socketIsOpened){
-//     //     socket.send(data)
-//     // }
-//     // else {
-//         sendBuffer.push(data)
-//     // }
-// }
-
-socket.onerror = (error) => {
-  console.error('Websocket error: ', error)
-}
+connectWebsocket()
 
 const subscriptionList = new Map<string, Set<string>>()
 

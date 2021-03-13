@@ -1,3 +1,25 @@
 .box {
   background-color: white;
 }
+
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  & > *{
+    &:first-child{
+      flex: 0 0 auto;
+    }
+
+    &:last-child{
+      flex: 1 1 auto;
+    }
+  }
+}
+
+.symbols {
+  &.hidden{
+    display: none;
+  }
+}

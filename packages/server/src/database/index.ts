@@ -9,6 +9,7 @@ import { finnhubResolvers } from '../finnhub/resolvers'
 import { chartGroupResolvers } from './chartGroup/resolvers'
 import { noteResolvers } from './note/resolvers'
 import { priceAlertResolvers } from './priceAlert/resolvers'
+import { reminderResolvers } from './reminder/resolvers'
 
 export const initDatabase = async () => {
   console.log('initDatabase')
@@ -26,14 +27,16 @@ export const initDatabase = async () => {
     ...finnhubResolvers.query,
     ...chartGroupResolvers.query,
     ...noteResolvers.query,
-    ...priceAlertResolvers.query
+    ...priceAlertResolvers.query,
+    ...reminderResolvers.query
   })
 
   schemaComposer.Mutation.addFields({
     ...dashboardResolvers.mutation,
     ...chartGroupResolvers.mutation,
     ...noteResolvers.mutation,
-    ...priceAlertResolvers.mutation
+    ...priceAlertResolvers.mutation,
+    ...reminderResolvers.mutation
   })
 
   // @ts-ignore

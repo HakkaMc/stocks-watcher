@@ -1,18 +1,18 @@
 import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, Icon, IconButton } from '@material-ui/core'
+import { Box, Icon, IconButton, Tooltip } from '@material-ui/core'
 import { grey, green } from '@material-ui/core/colors'
 import { FormattedNumber } from 'react-intl'
-import { useSubscription, useMutation, useQuery } from '@apollo/client'
-import {Symbol as SymbolType, GetQuote, LastPrice} from '@sw/shared/src/graphql'
+import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
+import {Symbol as SymbolType, GetQuote, LastPrice, Scalars} from '@sw/shared/src/graphql'
 import classNames from 'classnames'
 import { RocketLaunchOutline as RocketIcon } from 'mdi-material-ui'
-import { Close as CloseIcon, NotificationsNone as NotificationsIcon } from '@material-ui/icons'
 import styles from './styles.module.scss'
 import { LAST_PRICE_SUBSCRIPTION, GET_QUOTE } from '../../../../gqls'
 import { SymbolDetail } from '../SymbolDetail/SymbolDetail'
 import { QuickChart } from '../QuickChart/QuickChart'
 import { WatchlistChanger } from '../WatchlistChanger/WatchlistChanger'
-import {PriceAlert} from "../PriceAlert/PriceAlert";
+import { PriceAlert } from '../PriceAlert/PriceAlert'
+import { RefreshIcon } from '../../../../utils/icons'
 
 type Props = {
   symbol: SymbolType
@@ -20,12 +20,21 @@ type Props = {
 
 export const Symbol = ({ symbol }: Props) => {
   const [isDetailShown, setIsDetailShow] = useState(false)
+  const [forceRefreshTrigger, setForceRefreshTrigger] = useState(Date.now())
+  const [refreshTime, setRefreshTime] = useState('')
+
   const { data: lastPriceData, loading: lastPriceLoading, error: lastPriceError } = useSubscription<{
     lastPrice: LastPrice
   }>(LAST_PRICE_SUBSCRIPTION, { variables: { symbol: symbol.symbol } })
-  const { data: quoteData, loading: quoteLoading, error: quoteError } = useQuery<{ getQuote: GetQuote }>(GET_QUOTE, {
+
+  const quoteResponse = useQuery<{ getQuote: GetQuote }>(GET_QUOTE, {
     variables: { symbol: symbol.symbol }
   })
+
+  useEffect(() => {
+    // console.log('useEffect getQuote')
+    quoteResponse.refetch()
+  }, [forceRefreshTrigger, quoteResponse.refetch])
 
   const toggle = useCallback(() => {
     setIsDetailShow(!isDetailShown)
@@ -36,14 +45,13 @@ export const Symbol = ({ symbol }: Props) => {
     let previousClose = Number.NaN
     let gain = Number.NaN
 
-    if (!quoteError && !quoteLoading && quoteData && quoteData.getQuote) {
-      currentPrice = quoteData.getQuote.currentPrice
-      previousClose = quoteData.getQuote.previousClose
-
-      // console.log(symbol.symbol, previousClose, currentPrice)
+    if (!quoteResponse.error && !quoteResponse.loading && quoteResponse.data && quoteResponse.data.getQuote) {
+      currentPrice = quoteResponse.data.getQuote.currentPrice
+      previousClose = quoteResponse.data.getQuote.previousClose
     }
 
     if (!lastPriceError && !lastPriceLoading && lastPriceData) {
+      setRefreshTime(new Date().toLocaleTimeString())
       currentPrice = lastPriceData.lastPrice.price
     }
 
@@ -52,7 +60,23 @@ export const Symbol = ({ symbol }: Props) => {
     }
 
     return gain
-  }, [quoteData, quoteError, quoteLoading, lastPriceData, lastPriceLoading, lastPriceError])
+  }, [quoteResponse, lastPriceData, lastPriceLoading, lastPriceError])
+
+  const refreshData = useCallback(() => {
+    console.log('refreshData')
+    setForceRefreshTrigger(Date.now())
+  }, [setForceRefreshTrigger])
+
+  const quoteData = useMemo(():GetQuote=>{
+    setRefreshTime(new Date().toLocaleTimeString())
+    return {
+      openPrice: quoteResponse.data?.getQuote?.openPrice || Number.NaN,
+      highPrice: quoteResponse.data?.getQuote?.highPrice || Number.NaN,
+      lowPrice:quoteResponse.data?.getQuote?.lowPrice || Number.NaN,
+      currentPrice: quoteResponse.data?.getQuote?.currentPrice || Number.NaN,
+      previousClose: quoteResponse.data?.getQuote?.previousClose || Number.NaN,
+    }
+  }, [quoteResponse])
 
   return (
     <div className={styles.container}>
@@ -79,26 +103,34 @@ export const Symbol = ({ symbol }: Props) => {
         <Box className={styles.chart} mr={3}>
           <QuickChart
             symbol={symbol.symbol}
-            previousClose={quoteData?.getQuote?.previousClose}
-            openPrice={quoteData?.getQuote?.openPrice}
+            previousClose={quoteData.previousClose}
+            openPrice={quoteData.openPrice}
             lastPrice={lastPriceData?.lastPrice?.price}
             lastPriceTimestamp={lastPriceData?.lastPrice?.timestamp}
+            forceRefreshTrigger={forceRefreshTrigger}
           />
         </Box>
         <Box className={styles.openPrice} mr={3} bgcolor={grey[100]} p={1}>
-          <FormattedNumber value={quoteData?.getQuote?.previousClose || Number.NaN} />
+          <FormattedNumber value={quoteData.previousClose} />
         </Box>
         <Box className={styles.openPrice} mr={3} bgcolor={grey[100]} p={1}>
-          <FormattedNumber value={quoteData?.getQuote?.openPrice || Number.NaN} />
+          <FormattedNumber value={quoteData.openPrice} />
         </Box>
         <Box className={styles.currentPrice} mr={3} bgcolor={grey[100]} p={1}>
-          <FormattedNumber value={lastPriceData?.lastPrice?.price || quoteData?.getQuote?.currentPrice || Number.NaN} />
+          <FormattedNumber value={lastPriceData?.lastPrice?.price || quoteData.currentPrice} />
         </Box>
         <Box>
           <WatchlistChanger symbolObj={symbol} />
         </Box>
         <Box>
-          <PriceAlert symbol={symbol.symbol}/>
+          <PriceAlert symbol={symbol.symbol} />
+        </Box>
+        <Box>
+          <Tooltip title={refreshTime}>
+          <IconButton onClick={refreshData}>
+            <RefreshIcon />
+          </IconButton>
+          </Tooltip>
         </Box>
       </div>
       <SymbolDetail symbolObj={symbol} shown={isDetailShown} />

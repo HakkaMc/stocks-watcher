@@ -36,7 +36,8 @@ priceAlertGraphql.addResolver({
             user: userId,
             symbol: params.args.symbol,
             targetPrice: params.args.targetPrice,
-            actualPrice
+            actualPrice,
+            notifiedTimestamp: 0
         }).save()
 
         return 'OK'

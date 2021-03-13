@@ -1,6 +1,7 @@
-import { AxiosResponse } from 'axios'
+import { AxiosError, AxiosResponse } from 'axios'
 import { axiosInstance } from '../api/axios'
-import {LOGOUT_ENDPOINT, REFRESH_AUTH_ENDPOINT} from '../constants'
+import { LOGOUT_ENDPOINT, REFRESH_AUTH_ENDPOINT } from '../constants'
+import {store, actions} from "../redux";
 
 let timerRef: ReturnType<typeof setTimeout>
 
@@ -24,8 +25,15 @@ export const refreshSession = () =>
             window.sessionStorage.setItem('accessTokenExpiration', response.data.accessTokenExpiration.toString())
             resolve()
           },
-          () => {
-            reject()
+          (error: AxiosError) => {
+            if (error.response?.status === 401) {
+              // TODO - do it better
+              console.log('Unathorized')
+
+                return reject(new Error('UNAUTHORIZED'))
+            }
+
+            return reject(new Error('ERROR'))
           }
         )
     } else {
@@ -33,30 +41,43 @@ export const refreshSession = () =>
     }
   })
 
+const getDelay = () => {
+  const accessTokenExpiration = parseInt(window?.sessionStorage?.getItem('accessTokenExpiration') as string, 10)
+
+  return accessTokenExpiration - Date.now() - 5 * 60 * 1000
+}
+
 export const restartSessionTimer = () => {
   clearTimeout(timerRef)
 
-  const accessTokenExpiration = parseInt(window?.sessionStorage?.getItem('accessTokenExpiration') as string, 10)
+  let delay = getDelay()
 
-  const delay = accessTokenExpiration - Date.now()
+  console.log('Refresh session in ', delay / 1000 / 60, ' minutes')
 
-  timerRef = setTimeout(refreshSession, delay)
+  timerRef = setTimeout(()=>{
+      refreshSession().then(()=>{
+          delay = getDelay()
+          timerRef = setTimeout(restartSessionTimer, delay)
+      }, ()=>{
+          store.dispatch(actions.user.setAuthorized(false))
+      })
+  }, delay)
 }
 
 export const stopSessionTimer = () => clearTimeout(timerRef)
 
 const clearStorage = () => {
-    window.sessionStorage.removeItem('accessToken')
-    window.sessionStorage.removeItem('refreshToken')
-    window.sessionStorage.removeItem('accessTokenExpiration')
+  window.sessionStorage.removeItem('accessToken')
+  window.sessionStorage.removeItem('refreshToken')
+  window.sessionStorage.removeItem('accessTokenExpiration')
 }
 
 export const logout = () => {
-    axiosInstance.get(LOGOUT_ENDPOINT)
+  axiosInstance.get(LOGOUT_ENDPOINT)
 
-    clearStorage()
+  clearStorage()
 
-//  window.location.href = '/'
+  //  window.location.href = '/'
 
-    window.location.reload()
+  window.location.reload()
 }

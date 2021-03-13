@@ -2,6 +2,7 @@ import { httpServer } from './expressServer'
 
 import './finnhub/finnhubSocket'
 import { startComputing } from './compute'
+import {startReminder} from "./reminder";
 
 import { initApolloServer } from './apolloServer'
 import { initAdmin, initSymbols } from './init'
@@ -16,6 +17,8 @@ const start = async () => {
   initSymbols()
 
   startComputing()
+
+  startReminder()
 
   // Start the server
   httpServer.listen(PORT, () => {
