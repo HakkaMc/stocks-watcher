@@ -1,23 +1,29 @@
 import React, { useCallback, useEffect } from 'react'
-import { Box, Button, Radio, RadioGroup, FormControlLabel, Typography } from '@material-ui/core'
+import { Box, Button, Radio, RadioGroup, FormControlLabel } from '@material-ui/core'
 import { Controller, useForm } from 'react-hook-form'
 import { useMutation } from '@apollo/client'
-import { BinanceBalance, BinanceLastPrice } from '@sw/shared/src/graphql'
 
-import { round, parseNumber } from '../../../../utils/mix'
+import { parseNumber } from '../../../../utils/mix'
 import { PriceType, QuantityType } from '../../../../binanceTypes'
 import { Input } from '../../../../form'
-import { SET_TRAILING_STOP_ORDER } from '../../../../gqls'
+import { GET_BINANCE_ORDERS, GET_ORDERS, SET_ORDER } from '../../../../gqls'
 import { SymbolList } from '../SymbolList/SymbolList'
-import styles from '../../styles.module.scss'
 import { Label } from '../../../../components'
+import { SetOrder, SetOrderVariables } from '../../../../types/graphql/generated/SetOrder'
+import { BinanceAccountInformation_getBinanceAccountInformation_balances as Balance } from '../../../../types/graphql/generated/BinanceAccountInformation'
+import { BinanceLastPriceSubscription_binanceLastPrice as BinanceLastPrice } from '../../../../types/graphql/generated/BinanceLastPriceSubscription'
+import { orderTemplate } from '../../orderTemplate'
+
+import styles from '../../styles.module.scss'
 
 type Props = {
   assetAmount: number
-  balances: Array<BinanceBalance>
-  symbol: string
-  setSymbol: (symbol: string) => void
+  balances: Array<Balance>
   lastPrice?: BinanceLastPrice
+  setError: (error: any) => void
+  setLoading: (value: boolean) => void
+  setSymbol: (symbol: string) => void
+  symbol: string
 }
 
 type FormValues = {
@@ -35,7 +41,9 @@ export const BinanceFixedTrailingStop = ({
   assetAmount,
   lastPrice,
   symbol: predefinedSymbol,
-  setSymbol
+  setSymbol,
+  setLoading,
+  setError
 }: Props) => {
   const form = useForm<FormValues>({
     defaultValues: {
@@ -47,9 +55,27 @@ export const BinanceFixedTrailingStop = ({
     }
   })
 
-  const [setTrailingStopOrder, response] = useMutation<{ setTrailingStopOrder: string }>(SET_TRAILING_STOP_ORDER, {
-    fetchPolicy: 'no-cache'
+  const [setOrder, response] = useMutation<SetOrder, SetOrderVariables>(SET_ORDER, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [
+      {
+        query: GET_ORDERS
+      },
+      {
+        query: GET_BINANCE_ORDERS
+      }
+    ]
   })
+
+  useEffect(() => {
+    setLoading(response.loading)
+  }, [response.loading])
+
+  useEffect(() => {
+    if (response.error) {
+      setError(response.error)
+    }
+  }, [response.error])
 
   const save = useCallback(() => {
     const values = form.getValues()
@@ -69,19 +95,24 @@ export const BinanceFixedTrailingStop = ({
       // TODO
       console.log('Invalid Sell on Price')
     } else {
-      setTrailingStopOrder({
+      setOrder({
         variables: {
-          symbol: values.symbol,
-          activateOnPrice,
-          sellOnPrice,
-          priceType: values.priceType,
-          quantityType: values.quantityType,
-          quantity: quantity || -1,
-          quoteOrderQty: quoteOrderQty || -1
+          record: {
+            ...orderTemplate,
+            exchange: 'BINANCE',
+            symbol: values.symbol,
+            activateOnPrice,
+            sellOnPrice,
+            priceType: values.priceType,
+            quantityType: values.quantityType,
+            quantity: quantity || -1,
+            quoteOrderQty: quoteOrderQty || -1,
+            type: 'FIXED_TRAILING_STOP'
+          }
         }
       })
     }
-  }, [form, setTrailingStopOrder])
+  }, [form, setOrder])
 
   console.log(response.error)
 
@@ -126,7 +157,7 @@ export const BinanceFixedTrailingStop = ({
                     <FormControlLabel value={PriceType.Market} control={<Radio />} label="Market" />
                   </Box>
                   <Box>
-                    <FormControlLabel value={PriceType.Price} control={<Radio />} label={'Same as "Sell on Price"'} />
+                    <FormControlLabel value={PriceType.Middle} control={<Radio />} label="Middle" />
                   </Box>
                 </RadioGroup>
               )}

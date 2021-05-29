@@ -1,3 +1,46 @@
+type ValidationError implements ErrorInterface {
+  
+  message: String
+
+  
+  errors: [ValidatorError!]
+}
+
+interface ErrorInterface {
+  
+  message: String
+}
+
+type ValidatorError {
+  
+  message: String
+
+  
+  path: String
+
+  
+  value: JSON
+
+  
+  idx: Int!
+}
+
+
+scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+type MongoError implements ErrorInterface {
+  
+  message: String
+
+  
+  code: Int
+}
+
+type RuntimeError implements ErrorInterface {
+  
+  message: String
+}
+
 type Query {
   findSymbols(
     
@@ -15,14 +58,36 @@ type Query {
   getNote: Note
   getPriceAlerts(symbol: String!): [PriceAlert]
   getReminders: [Reminder]
-  setBinanceSellOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): BinanceNewOrderResponseFull
-  setBinanceBuyOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): BinanceNewOrderResponseFull
   getBinanceAccountInformation: BinanceAccountInformation
-  getBinanceTrades(symbol: String!): [BinanceTrade!]!
-  getBinanceExchangeInformation: [BinanceExchangeInformation!]!
   getBinanceOrders: [BinanceOrder!]!
-  cancelBinanceOrder(symbol: String!, orderId: Int, origClientOrderId: String): [CancelBinanceOrder!]!
-  getOrders: [Order]!
+  getBinanceCachedLastPrice(symbol: String!): BinanceLastPrice!
+  getOrders(
+    
+    filter: FilterFindManyOrderInput
+    skip: Int
+    limit: Int = 100
+    sort: SortFindManyOrderInput
+  ): [Order!]!
+  getBinanceTrades(
+    
+    filter: FilterFindManyBinanceTradeInput
+    skip: Int
+    limit: Int = 100
+    sort: SortFindManyBinanceTradeInput
+  ): [BinanceTrade!]!
+  getBinanceSymbols(
+    
+    filter: FilterFindManyBinanceSymbolInput
+    skip: Int
+    limit: Int = 100
+    sort: SortFindManyBinanceSymbolInput
+  ): [BinanceSymbol!]!
+  getBinanceProfile(
+    
+    filter: FilterFindOneBinanceProfileInput
+    skip: Int
+    sort: SortFindOneBinanceProfileInput
+  ): BinanceProfile
 }
 
 type Symbol {
@@ -194,9 +259,6 @@ type ChartGroupCharts {
   symbolData: Symbol
 }
 
-
-scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
-
 type Note {
   user: MongoID
   text: String
@@ -227,30 +289,6 @@ type Reminder {
   createdAt: Date
 }
 
-type BinanceNewOrderResponseFull {
-  symbol: String!
-  orderId: Int!
-  orderListId: Int!
-  clientOrderId: String!
-  transactTime: Float!
-  price: String!
-  origQty: String!
-  executedQty: String!
-  cummulativeQuoteQty: String!
-  status: String!
-  timeInForce: String!
-  type: String!
-  side: String!
-  fills: [BinanceFill!]!
-}
-
-type BinanceFill {
-  price: Float!
-  qty: Float!
-  commission: Float!
-  commissionAsset: String!
-}
-
 type BinanceAccountInformation {
   makerCommission: Float!
   takerCommission: Float!
@@ -269,27 +307,6 @@ type BinanceBalance {
   asset: String!
   free: Float!
   locked: Float!
-}
-
-type BinanceTrade {
-  id: Float!
-  orderId: Float!
-  symbol: String!
-  isBuyer: Boolean!
-  price: Float!
-  qty: Float!
-  quoteQty: Float!
-  time: Float!
-  commission: Float!
-  commissionAsset: String!
-}
-
-type BinanceExchangeInformation {
-  symbol: String!
-  baseAsset: String!
-  quoteAsset: String!
-  filters: JSON!
-  ocoAllowed: Boolean!
 }
 
 type BinanceOrder {
@@ -313,20 +330,14 @@ type BinanceOrder {
   origQuoteOrderQty: Float!
 }
 
-type CancelBinanceOrder {
+type BinanceLastPrice {
   symbol: String!
-  origClientOrderId: String!
-  orderId: Int!
-  orderListId: Int!
-  clientOrderId: String!
-  price: Float!
-  origQty: Float!
-  executedQty: Float!
-  cummulativeQuoteQty: Float!
-  status: String!
-  timeInForce: String!
-  type: String!
-  side: String!
+  ask: Float!
+  bid: Float!
+  middle: Float!
+  diff: Float!
+  diffPercentage: Float!
+  timestamp: Float!
 }
 
 type Order {
@@ -335,15 +346,6 @@ type Order {
   type: String!
   symbol: String!
   exchange: String!
-  fixedTrailingStop: OrderFixedTrailingStop
-  movingBuy: OrderMovingBuy
-  percentageTrailingStop: OrderPercentageTrailingStop
-  _id: MongoID!
-  updatedAt: Date
-  createdAt: Date
-}
-
-type OrderFixedTrailingStop {
   activateOnPrice: Float!
   sellOnPrice: Float!
   priceType: String!
@@ -351,20 +353,268 @@ type OrderFixedTrailingStop {
   quantity: Float!
   quoteOrderQty: Float!
   activatedTimestamp: Float!
-}
-
-type OrderMovingBuy {
-  activateOnPrice: Float!
   percent: Float!
-  priceType: String!
-  quantityType: String!
-  quantity: Float!
-  quoteOrderQty: Float!
+  meta: JSON
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
 }
 
-type OrderPercentageTrailingStop {
-  activateOnPrice: Float!
-  percentageDecrease: Float!
+
+input FilterFindManyOrderInput {
+  active: Boolean
+  user: MongoID
+  type: String
+  symbol: String
+  exchange: String
+  activateOnPrice: Float
+  sellOnPrice: Float
+  priceType: String
+  quantityType: String
+  quantity: Float
+  quoteOrderQty: Float
+  activatedTimestamp: Float
+  percent: Float
+  meta: JSON
+  _id: MongoID
+  updatedAt: Date
+  createdAt: Date
+
+  
+  _operators: FilterFindManyOrderOperatorsInput
+  OR: [FilterFindManyOrderInput!]
+  AND: [FilterFindManyOrderInput!]
+}
+
+
+input FilterFindManyOrderOperatorsInput {
+  _id: FilterFindManyOrder_idOperatorsInput
+}
+
+input FilterFindManyOrder_idOperatorsInput {
+  gt: MongoID
+  gte: MongoID
+  lt: MongoID
+  lte: MongoID
+  ne: MongoID
+  in: [MongoID]
+  nin: [MongoID]
+  exists: Boolean
+}
+
+enum SortFindManyOrderInput {
+  _ID_ASC
+  _ID_DESC
+  CREATED_ASC
+  CREATED_DESC
+}
+
+type BinanceTrade {
+  user: MongoID
+  baseAsset: String!
+  quoteAsset: String!
+  symbol: String!
+  tradeId: Float!
+  orderId: Float!
+  orderListId: Float!
+  price: Float!
+  qty: Float!
+  quoteQty: Float!
+  commission: Float!
+  commissionAsset: String!
+  time: Float!
+  isBuyer: Boolean!
+  isMaker: Boolean!
+  isBestMatch: Boolean!
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+
+input FilterFindManyBinanceTradeInput {
+  user: MongoID
+  baseAsset: String
+  quoteAsset: String
+  symbol: String
+  tradeId: Float
+  orderId: Float
+  orderListId: Float
+  price: Float
+  qty: Float
+  quoteQty: Float
+  commission: Float
+  commissionAsset: String
+  time: Float
+  isBuyer: Boolean
+  isMaker: Boolean
+  isBestMatch: Boolean
+  _id: MongoID
+  updatedAt: Date
+  createdAt: Date
+
+  
+  _operators: FilterFindManyBinanceTradeOperatorsInput
+  OR: [FilterFindManyBinanceTradeInput!]
+  AND: [FilterFindManyBinanceTradeInput!]
+}
+
+
+input FilterFindManyBinanceTradeOperatorsInput {
+  _id: FilterFindManyBinanceTrade_idOperatorsInput
+}
+
+input FilterFindManyBinanceTrade_idOperatorsInput {
+  gt: MongoID
+  gte: MongoID
+  lt: MongoID
+  lte: MongoID
+  ne: MongoID
+  in: [MongoID]
+  nin: [MongoID]
+  exists: Boolean
+}
+
+enum SortFindManyBinanceTradeInput {
+  _ID_ASC
+  _ID_DESC
+  TIME_ASC
+  TIME_DESC
+}
+
+type BinanceSymbol {
+  symbol: String!
+  status: String!
+  baseAsset: String!
+  baseAssetPrecision: Float!
+  quoteAsset: String!
+  quotePrecision: Float!
+  quoteAssetPrecision: Float!
+  orderTypes: [String]!
+  icebergAllowed: Boolean!
+  ocoAllowed: Boolean!
+  isSpotTradingAllowed: Boolean!
+  isMarginTradingAllowed: Boolean!
+  filters: JSON
+  permissions: [String]!
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+
+input FilterFindManyBinanceSymbolInput {
+  symbol: String
+  status: String
+  baseAsset: String
+  baseAssetPrecision: Float
+  quoteAsset: String
+  quotePrecision: Float
+  quoteAssetPrecision: Float
+  orderTypes: [String]
+  icebergAllowed: Boolean
+  ocoAllowed: Boolean
+  isSpotTradingAllowed: Boolean
+  isMarginTradingAllowed: Boolean
+  filters: JSON
+  permissions: [String]
+  _id: MongoID
+  updatedAt: Date
+  createdAt: Date
+
+  
+  _operators: FilterFindManyBinanceSymbolOperatorsInput
+  OR: [FilterFindManyBinanceSymbolInput!]
+  AND: [FilterFindManyBinanceSymbolInput!]
+}
+
+
+input FilterFindManyBinanceSymbolOperatorsInput {
+  _id: FilterFindManyBinanceSymbol_idOperatorsInput
+}
+
+input FilterFindManyBinanceSymbol_idOperatorsInput {
+  gt: MongoID
+  gte: MongoID
+  lt: MongoID
+  lte: MongoID
+  ne: MongoID
+  in: [MongoID]
+  nin: [MongoID]
+  exists: Boolean
+}
+
+enum SortFindManyBinanceSymbolInput {
+  _ID_ASC
+  _ID_DESC
+}
+
+type BinanceProfile {
+  user: MongoID
+  lastBalanceHash: String
+  lastBalanceData: JSON
+  countedBalance: [BinanceProfileCountedBalance]!
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+type BinanceProfileCountedBalance {
+  asset: String!
+  quantity: Float!
+  amount: Float!
+  averagePurchasePrice: Float!
+  realizedProfit: Float!
+  lastTradeTimestamp: Float!
+  _id: MongoID
+}
+
+
+input FilterFindOneBinanceProfileInput {
+  user: MongoID
+  lastBalanceHash: String
+  lastBalanceData: JSON
+  countedBalance: [FilterFindOneBinanceProfileCountedBalanceInput]
+  _id: MongoID
+  updatedAt: Date
+  createdAt: Date
+
+  
+  _operators: FilterFindOneBinanceProfileOperatorsInput
+  OR: [FilterFindOneBinanceProfileInput!]
+  AND: [FilterFindOneBinanceProfileInput!]
+}
+
+
+input FilterFindOneBinanceProfileCountedBalanceInput {
+  asset: String
+  quantity: Float
+  amount: Float
+  averagePurchasePrice: Float
+  realizedProfit: Float
+  lastTradeTimestamp: Float
+  _id: MongoID
+}
+
+
+input FilterFindOneBinanceProfileOperatorsInput {
+  _id: FilterFindOneBinanceProfile_idOperatorsInput
+}
+
+input FilterFindOneBinanceProfile_idOperatorsInput {
+  gt: MongoID
+  gte: MongoID
+  lt: MongoID
+  lte: MongoID
+  ne: MongoID
+  in: [MongoID]
+  nin: [MongoID]
+  exists: Boolean
+}
+
+enum SortFindOneBinanceProfileInput {
+  _ID_ASC
+  _ID_DESC
 }
 
 type Mutation {
@@ -383,13 +633,60 @@ type Mutation {
   setReminder(title: String!, text: String, timestamp: Float!): String
   removeReminder(id: String!): String
   cancelOrder(orderId: String!): String!
-  setTrailingStopOrder(symbol: String!, activateOnPrice: Float!, sellOnPrice: Float!, priceType: String!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
-  setMovingBuyOrder(symbol: String!, activateOnPrice: Float!, percent: Float!, priceType: String!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
+
+  
+  setOrder(record: CreateOneOrderInput!): CreateOneOrderPayload
+  setBinanceSellOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
+  setBinanceBuyOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
+  cancelBinanceOrder(symbol: String!, orderId: Int, origClientOrderId: String): [CancelBinanceOrder!]!
+  refreshBinanceTrades: String!
+}
+
+type CreateOneOrderPayload {
+  
+  recordId: MongoID
+
+  
+  record: Order
+
+  
+  error: ErrorInterface
+}
+
+
+input CreateOneOrderInput {
+  type: String!
+  symbol: String!
+  exchange: String!
+  activateOnPrice: Float!
+  sellOnPrice: Float!
+  priceType: String!
+  quantityType: String!
+  quantity: Float!
+  quoteOrderQty: Float!
+  percent: Float!
+  meta: JSON
+}
+
+type CancelBinanceOrder {
+  symbol: String!
+  origClientOrderId: String!
+  orderId: Int!
+  orderListId: Int!
+  clientOrderId: String!
+  price: Float!
+  origQty: Float!
+  executedQty: Float!
+  cummulativeQuoteQty: Float!
+  status: String!
+  timeInForce: String!
+  type: String!
+  side: String!
 }
 
 type Subscription {
   lastPrice(symbol: String): LastPrice
-  binanceLastPrice(symbol: String): BinanceLastPrice
+  binanceLastPrice(symbol: String): BinanceLastPrice!
   binanceBalanceUpdate: BinanceBalanceUpdate
   binanceOrderUpdate: BinanceOrderUpdate
   binanceOcoOrderUpdate: BinanceOcoOrderUpdate
@@ -400,16 +697,6 @@ type LastPrice {
   price: Float!
   timestamp: Float!
   volume: Float!
-}
-
-type BinanceLastPrice {
-  symbol: String!
-  ask: Float!
-  bid: Float!
-  middle: Float!
-  diff: Float!
-  diffPercentage: Float!
-  timestamp: Float!
 }
 
 type BinanceBalanceUpdate {

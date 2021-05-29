@@ -1,8 +1,7 @@
-import { w3cwebsocket as WebSocket, client as Websocket2 } from 'websocket'
-import { getUserDataStreamKey } from './queries'
+import { getUserDataStreamKey, updateUserDataStreamKey } from './queries'
 import { pubSub } from '../pubSub'
-
-const baseUrl = 'wss://stream.binance.com:9443'
+import { binanceWsUrl } from '../constants'
+import { Websocket } from '../utils/websocket'
 
 const eTypes = {
   outboundAccountPosition: 'outboundAccountPosition',
@@ -11,37 +10,53 @@ const eTypes = {
   listStatus: 'listStatus'
 }
 
-const socket2 = new Websocket2()
+const userMap: Record<string, Websocket> = {}
 
-socket2.on('connectFailed', (error) => {
-  console.error('Binance websocket user-data connect failed', error)
-})
+export const connectBinanceUserDataWebsocket = async (userId: string) => {
+  console.log('connectBinanceUserDataWebsocket', userId)
+  if (!userMap[userId]) {
+    // TODO - get user websocket key and secret from DB
 
-socket2.on('connect', (connection) => {
-  console.log('Binance websocket user-data connected')
+    const listenKey = await getUserDataStreamKey()
 
-  connection.on('error', (error) => {
-    console.error('Binance websocket user-data connection failed')
+    if (listenKey) {
+      let refreshWebsocketRef: ReturnType<typeof setTimeout>
+      let refreshListenKeyRef: ReturnType<typeof setTimeout>
 
-    setTimeout(() => {
-      connectUserDataWebsocket()
-    }, 1000)
-  })
+      const websocket = new Websocket({
+        name: 'Binance User',
+        wsUrl: `${binanceWsUrl}/ws/${listenKey}`,
+        lazyConnect: false
+      })
 
-  connection.on('close', () => {
-    console.error('Binance websocket user-data connection closed')
-  })
+      websocket.onConnect = () => {
+        clearInterval(refreshWebsocketRef)
+        clearInterval(refreshListenKeyRef)
 
-  connection.on('message', (event) => {
-    // console.log('websocket message type: ', event.type)
-    if (event.type === 'utf8') {
-      const rawData = event.utf8Data
+        updateUserDataStreamKey(listenKey)
 
-      console.log('raw data: ', rawData, typeof rawData)
+        refreshListenKeyRef = setInterval(() => {
+          updateUserDataStreamKey(listenKey)
+        }, 30 * 60 * 1000)
 
-      if (typeof rawData === 'string') {
-        const data = JSON.parse(rawData)
+        refreshWebsocketRef = setInterval(() => {
+          if (websocket.lastPingPongTimestamp < Date.now() - 15 * 60 * 1000) {
+            websocket.reconnect()
+          }
+        }, 5 * 60 * 1000)
+      }
 
+      websocket.onDisconnect = () => {
+        clearInterval(refreshWebsocketRef)
+        clearInterval(refreshListenKeyRef)
+
+        websocket.destroy()
+
+        connectBinanceUserDataWebsocket(userId)
+      }
+
+      websocket.onMessage = (data) => {
+        console.log('Binance user WS: ', data.e)
         switch (data.e) {
           case eTypes.balanceUpdate:
             pubSub.publish(`BINANCE_BALANCE_UPDATE`, {
@@ -51,6 +66,7 @@ socket2.on('connect', (connection) => {
               clearTime: data.T
             })
             break
+
           // Orders update
           case eTypes.executionReport:
             pubSub.publish(`BINANCE_ORDER_UPDATE`, {
@@ -61,6 +77,7 @@ socket2.on('connect', (connection) => {
               transactionTime: data.T
             })
             break
+
           case eTypes.listStatus:
             pubSub.publish(`BINANCE_OCO_ORDER_UPDATE`, {
               symbol: data.s,
@@ -71,16 +88,19 @@ socket2.on('connect', (connection) => {
           default:
         }
       }
+
+      // websocket.onConnect()
+
+      userMap[userId] = websocket
+    } else {
+      console.error('getUserDataStreamKey returns empty listen-key!')
     }
-  })
-})
+  }
+}
 
-export const connectUserDataWebsocket = async () => {
-  const listenKey = await getUserDataStreamKey()
-
-  if (listenKey) {
-    socket2.connect(`${baseUrl}/ws/${listenKey}`)
-  } else {
-    console.error('getUserDataStreamKey returns empty listen-key!')
+export const closeBinanceUserDataWebsocket = async (userId: string) => {
+  if (userMap[userId]) {
+    userMap[userId].destroy()
+    delete userMap[userId]
   }
 }

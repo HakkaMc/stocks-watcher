@@ -8,6 +8,7 @@ import { createServer as createHttpServer } from 'http'
 import { DashboardTsModel } from './database/dashboard/schema'
 import { UserTsModel } from './database/user/schema'
 import { getGoogleAuthURL, getRefreshedToken, getUserInfo } from './googleAuth'
+import { connectBinanceUserDataWebsocket } from './binance/wsUserData'
 
 const MongoStore = connectMongo(expressSession)
 
@@ -96,6 +97,8 @@ expressServer.get('/auth/google/callback', async (req, res) => {
 
   req.session.cookie.expires = new Date(userInfo.accessTokenExpiration)
   req.session.cookie.maxAge = userInfo.accessTokenExpiration - Date.now()
+
+  connectBinanceUserDataWebsocket(req.session.userId.toString())
 
   console.log('userId ', req.session.userId, ' saved', req.session.cookie.expires, req.session.cookie.maxAge)
 

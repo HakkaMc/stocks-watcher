@@ -1,7 +1,7 @@
 import { roundToMidnight, floorToMinute } from '@sw/shared/src/time'
-import { ReminderTsModel, ReminderTsType } from './database/reminder/schema'
-import { UserTsType } from './database/user/schema'
-import { sendEmail } from './emailSender'
+import { ReminderTsModel, ReminderTsType } from '../database/reminder/schema'
+import { UserTsType } from '../database/user/schema'
+import { sendEmail } from '../utils/emailSender'
 
 type EnhancedReminder = ReminderTsType & { user: UserTsType }
 

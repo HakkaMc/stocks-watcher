@@ -1,7 +1,8 @@
 import React, { useMemo, Suspense } from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
 
-import { AppLazy, ChartGroupViewLazy } from './modules/lazy'
+import { ChartGroupViewLazy } from './modules/lazy'
+import { AppLazy } from './modules/App/App.lazy'
 import { Login } from './modules/Login/Login'
 import { LoginDone } from './modules/LoginDone/LoginDone'
 import { ROUTES } from './constants'

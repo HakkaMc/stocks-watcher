@@ -9,27 +9,15 @@ const OrderSchema = createSchema(
     type: Type.string({ required: true }), // BUY, SELL, TRAILING_STOP, TAKE_PROFIT, STOP_LOSS, CONSOLIDATION, MOVING_BUY
     symbol: Type.string({ required: true }),
     exchange: Type.string({ required: true }),
-    fixedTrailingStop: {
-      activateOnPrice: Type.number({ required: true, default: -1 }),
-      sellOnPrice: Type.number({ required: true, default: -1 }),
-      priceType: Type.string({ required: true }),
-      quantityType: Type.string({ required: true }),
-      quantity: Type.number({ required: true, default: -1 }),
-      quoteOrderQty: Type.number({ required: true, default: -1 }),
-      activatedTimestamp: Type.number({ required: true, default: -1 })
-    },
-    movingBuy: {
-      activateOnPrice: Type.number({ required: true, default: -1 }),
-      percent: Type.number({ required: true, default: 10 }),
-      priceType: Type.string({ required: true }),
-      quantityType: Type.string({ required: true }),
-      quantity: Type.number({ required: true, default: -1 }),
-      quoteOrderQty: Type.number({ required: true, default: -1 })
-    },
-    percentageTrailingStop: {
-      activateOnPrice: Type.number({ required: true, default: -1 }),
-      percentageDecrease: Type.number({ required: true, default: 10 })
-    }
+    activateOnPrice: Type.number({ required: true, default: -1 }),
+    sellOnPrice: Type.number({ required: true, default: -1 }), // FIXED_TRAILING_STOP
+    priceType: Type.string({ required: true }),
+    quantityType: Type.string({ required: true }),
+    quantity: Type.number({ required: true, default: -1 }),
+    quoteOrderQty: Type.number({ required: true, default: -1 }),
+    activatedTimestamp: Type.number({ required: true, default: -1 }),
+    percent: Type.number({ required: true, default: 0 }),
+    meta: Type.mixed()
   },
   { _id: true, timestamps: true }
 )

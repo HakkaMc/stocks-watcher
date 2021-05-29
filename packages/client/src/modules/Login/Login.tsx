@@ -3,7 +3,8 @@ import { Box, Paper, Button, Typography } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 
 import styles from './styles.module.scss'
-import { appLazyPreload, chartGroupViewPreload } from '../lazy'
+import { chartGroupViewPreload } from '../lazy'
+import { appLazyPreload } from '../App/App.lazy'
 import { API_PREFIX, LOGIN_ENDPOINT } from '../../constants'
 import { refreshSession, restartSessionTimer } from '../../utils/session'
 import { ScreenLoader } from '../../components'
@@ -39,9 +40,9 @@ export const Login = ({ setAuthorized }: Props) => {
         const refreshToken = event.data?.refreshToken
         const accessTokenExpiration = event.data?.accessTokenExpiration
 
-        window.sessionStorage.setItem('accessToken', accessToken)
-        window.sessionStorage.setItem('refreshToken', refreshToken)
-        window.sessionStorage.setItem('accessTokenExpiration', accessTokenExpiration)
+        window.localStorage.setItem('accessToken', accessToken)
+        window.localStorage.setItem('refreshToken', refreshToken)
+        window.localStorage.setItem('accessTokenExpiration', accessTokenExpiration)
 
         setAuthorized(true)
         restartSessionTimer()

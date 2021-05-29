@@ -134,7 +134,7 @@ export const getExchangeInfo = async (symbol?: string): ReturnPromise<Record<str
     )
   })
 
-export const getUserDataStreamKey = async (): Promise<Record<string, string>> =>
+export const getUserDataStreamKey = async (): Promise<string> =>
   binanceQuery(
     {
       method: 'post',
@@ -150,6 +150,46 @@ export const getUserDataStreamKey = async (): Promise<Record<string, string>> =>
       return ''
     }
   )
+
+export const updateUserDataStreamKey = async (listenKey: string): ReturnPromise<string> =>
+  new Promise((resolve) => {
+    binanceQuery(
+      {
+        method: 'put',
+        url: EPs.userDataStream,
+        params: {
+          listenKey
+        }
+      },
+      false
+    ).then(
+      (response) => {
+        console.log(response.data)
+
+        if (response.data === null) {
+          return resolve({
+            error: '',
+            errorData: undefined,
+            data: 'OK'
+          })
+        }
+
+        return resolve({
+          error: 'UPDATE_USER_DATA_STREAM_KEY_FAILED',
+          errorData: response.data,
+          data: ''
+        })
+      },
+      (error) => {
+        console.log(error)
+        return resolve({
+          error: 'UPDATE_USER_DATA_STREAM_KEY_FAILED',
+          errorData: error,
+          data: ''
+        })
+      }
+    )
+  })
 
 const getSymbolPrice = async (symbol: string, url: string): ReturnPromise<number> =>
   new Promise((resolve) => {
@@ -300,7 +340,62 @@ export const getOrders = async (): ReturnPromise<Array<BinanceOrder>> =>
     )
   })
 
-export const getTrades = async (symbol: string): ReturnPromise<BinanceTrade[]> =>
+export const getOrder = async (orderId: number, userId: string, symbol: string): ReturnPromise<BinanceOrder> =>
+  new Promise((resolve) => {
+    binanceQuery(
+      {
+        method: 'get',
+        url: EPs.newOrder,
+        params: {
+          orderId,
+          symbol
+        }
+      },
+      true
+    ).then(
+      (response) => {
+        const strToNbr = [
+          'price',
+          'origQty',
+          'executedQty',
+          'cummulativeQuoteQty',
+          'stopPrice',
+          'icebergQty',
+          'origQuoteOrderQty'
+        ]
+
+        if (response.data) {
+          const data = { ...response.data }
+
+          strToNbr.forEach((key) => {
+            data[key] = parseFloat(data[key])
+          })
+
+          return resolve({
+            error: '',
+            errorData: undefined,
+            data
+          })
+        }
+
+        return resolve({
+          error: 'GET_ORDER_FAILED',
+          errorData: undefined,
+          data: {} as any
+        })
+      },
+      (error) => {
+        console.log(error)
+        return resolve({
+          error: 'GET_ORDER_FAILED',
+          errorData: error,
+          data: {} as any
+        })
+      }
+    )
+  })
+
+export const getTrades = async (symbol: string, startTime: number | undefined = 0): ReturnPromise<Array<any>> =>
   new Promise(async (resolve) => {
     binanceQuery(
       {
@@ -309,18 +404,20 @@ export const getTrades = async (symbol: string): ReturnPromise<BinanceTrade[]> =
         params: {
           symbol,
           limit: 1000,
-          recvWindow: 60000
+          recvWindow: 60000,
+          startTime
         }
       },
       true
     ).then(
       async (response) => {
         if (response.data && Array.isArray(response.data)) {
+          const numerizeKeys = ['price', 'qty', 'quoteQty', 'commission']
+
           response.data.forEach((item: any) => {
-            item.price = parseFloat(item.price)
-            item.qty = parseFloat(item.qty)
-            item.quoteQty = parseFloat(item.quoteQty)
-            item.commission = parseFloat(item.commission)
+            numerizeKeys.forEach((key) => {
+              item[key] = parseFloat(item[key]) || 0
+            })
           })
 
           return resolve({
@@ -339,7 +436,7 @@ export const getTrades = async (symbol: string): ReturnPromise<BinanceTrade[]> =
       (error) => {
         console.log(error)
         return resolve({
-          error: 'GET_TRADES_FAILED',
+          error: 'GET_BINANCE_TRADES_FAILED',
           errorData: error,
           data: []
         })
@@ -347,12 +444,12 @@ export const getTrades = async (symbol: string): ReturnPromise<BinanceTrade[]> =
     )
   })
 
-export const placeOrder = async (orderQuery: Record<string, any>, production = false): ReturnPromise =>
+export const placeOrder = async (orderQuery: Record<string, any>, reallyPlace = false): ReturnPromise =>
   new Promise(async (resolve) => {
     binanceQuery(
       {
         method: 'post',
-        url: production ? EPs.newOrder : EPs.testOrder,
+        url: reallyPlace ? EPs.newOrder : EPs.testOrder,
         params: orderQuery
       },
       true

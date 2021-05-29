@@ -1,16 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import classNames from 'classnames'
-import { Box, IconButton, Paper } from '@material-ui/core'
-import { BinanceOrder, CancelBinanceOrder } from '@sw/shared/src/graphql'
+import { IconButton } from '@material-ui/core'
+import { CancelBinanceOrder } from '@sw/shared/src/graphql'
 import { FormattedDate, FormattedTime } from 'react-intl'
-import { useQuery, useLazyQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 
 import { Modal } from '../../Modal/Modal'
 import { CloseIcon } from '../../../utils/icons'
-import { CANCEL_BINANCE_ORDER } from '../../../gqls'
+import { CANCEL_BINANCE_ORDER, GET_BINANCE_ORDERS, GET_ORDERS } from '../../../gqls'
 import { ModalTemplate } from '../../../components'
+import { BinanceOrders_getBinanceOrders } from '../../../types/graphql/generated/BinanceOrders'
+import { CancelBinanceOrderVariables } from '../../../types/graphql/generated/CancelBinanceOrder'
 
-type Props = BinanceOrder
+type Props = BinanceOrders_getBinanceOrders
 
 export const BinanceRow = ({
   symbol,
@@ -27,8 +28,18 @@ export const BinanceRow = ({
 }: Props) => {
   const [showCancelOrderInfoDialog, setShowCancelOrderInfoDialog] = useState(false)
 
-  const [cancelOrder, cancelOrderResponse] = useLazyQuery<{ cancelBinanceOrder: CancelBinanceOrder }>(
-    CANCEL_BINANCE_ORDER
+  const [cancelOrder, cancelOrderResponse] = useMutation<CancelBinanceOrder, CancelBinanceOrderVariables>(
+    CANCEL_BINANCE_ORDER,
+    {
+      refetchQueries: [
+        {
+          query: GET_ORDERS
+        },
+        {
+          query: GET_BINANCE_ORDERS
+        }
+      ]
+    }
   )
 
   const closeOrder = useCallback(() => {

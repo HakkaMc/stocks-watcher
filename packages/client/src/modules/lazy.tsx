@@ -1,15 +1,5 @@
 import React from 'react'
 
-export const appLazyPreload = (): Promise<any> =>
-  new Promise((resolve, reject) => {
-    return import(/* webpackChunkName: "App" */ './App/App').then(
-      (response: any) => resolve({ default: response.App }),
-      (error) => reject(error)
-    )
-  })
-
-export const AppLazy = React.lazy(appLazyPreload)
-
 export const BinanceLazy = React.lazy(
   (): Promise<any> =>
     new Promise((resolve, reject) => {
@@ -25,6 +15,16 @@ export const OrdersLazy = React.lazy(
     new Promise((resolve, reject) => {
       return import(/* webpackChunkName: "Orders" */ './Orders/Orders').then(
         (response: any) => resolve({ default: response.Orders }),
+        (error) => reject(error)
+      )
+    })
+)
+
+export const TradesLazy = React.lazy(
+  (): Promise<any> =>
+    new Promise((resolve, reject) => {
+      return import(/* webpackChunkName: "Trades" */ './Trades/Trades').then(
+        (response: any) => resolve({ default: response.Trades }),
         (error) => reject(error)
       )
     })

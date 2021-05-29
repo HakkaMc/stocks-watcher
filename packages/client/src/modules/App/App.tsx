@@ -2,7 +2,7 @@ import React, { Suspense } from 'react'
 import { Box } from '@material-ui/core'
 import { Switch, Route } from 'react-router-dom'
 import { Loader } from '../../components'
-import { BinanceLazy, DashboardLazy, ChartGroupsLazy, OrdersLazy } from '../lazy'
+import { BinanceLazy, DashboardLazy, ChartGroupsLazy, OrdersLazy, TradesLazy } from '../lazy'
 import styles from './styles.module.scss'
 
 import { Menu } from './modules/Menu/Menu'
@@ -25,6 +25,7 @@ export const App = () => {
             <Route path={ROUTES.ChartGroups} component={ChartGroupsLazy} />
             <Route path={ROUTES.BinancePortfolio} component={BinanceLazy} />
             <Route path={ROUTES.Orders} component={OrdersLazy} />
+            <Route path={ROUTES.Trades} component={TradesLazy} />
           </Switch>
         </Suspense>
       </div>

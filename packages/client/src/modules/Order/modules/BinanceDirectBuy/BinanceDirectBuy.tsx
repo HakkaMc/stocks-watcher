@@ -1,22 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, Button, Radio, RadioGroup, FormControlLabel, Paper, IconButton, MenuItem } from '@material-ui/core'
+import React, { useCallback, useEffect } from 'react'
+import { Box, Button, Radio, RadioGroup, FormControlLabel } from '@material-ui/core'
 import { Controller, useForm } from 'react-hook-form'
-import { useSubscription, useQuery, useMutation, useLazyQuery } from '@apollo/client'
-import { BinanceBalance, BinanceLastPrice } from '@sw/shared/src/graphql'
+import { useMutation } from '@apollo/client'
 
 import { PriceType, QuantityType } from '../../../../binanceTypes'
-import { Input, Select, Autocomplete } from '../../../../form'
-import { SET_BINANCE_BUY_ORDER } from '../../../../gqls'
+import { Input } from '../../../../form'
+import { GET_BINANCE_ORDERS, GET_ORDERS, SET_BINANCE_BUY_ORDER } from '../../../../gqls'
 import styles from '../../styles.module.scss'
-import { round, parseNumber } from '../../../../utils/mix'
+import { parseNumber } from '../../../../utils/mix'
 import { SymbolList } from '../SymbolList/SymbolList'
 import { Label } from '../../../../components'
+import { BinanceAccountInformation_getBinanceAccountInformation_balances as Balance } from '../../../../types/graphql/generated/BinanceAccountInformation'
+import { BinanceBuyOrder, BinanceBuyOrderVariables } from '../../../../types/graphql/generated/BinanceBuyOrder'
 
 type Props = {
-  balances: Array<BinanceBalance>
+  balances: Array<Balance>
   symbol: string
+  setError: (error: any) => void
+  setLoading: (value: boolean) => void
   setSymbol: (symbol: string) => void
-  lastPrice?: BinanceLastPrice
 }
 
 type FormValues = {
@@ -28,7 +30,7 @@ type FormValues = {
   symbol: string
 }
 
-export const BinanceDirectBuy = ({ balances, lastPrice, symbol: predefinedSymbol, setSymbol }: Props) => {
+export const BinanceDirectBuy = ({ balances, symbol: predefinedSymbol, setError, setLoading, setSymbol }: Props) => {
   const form = useForm<FormValues>({
     defaultValues: {
       symbol: predefinedSymbol || '',
@@ -43,9 +45,27 @@ export const BinanceDirectBuy = ({ balances, lastPrice, symbol: predefinedSymbol
     setSymbol(symbol)
   }, [symbol])
 
-  const [setBinanceSellOrder, response] = useLazyQuery<{ setBinanceBuyOrder: string }>(SET_BINANCE_BUY_ORDER, {
-    fetchPolicy: 'network-only'
+  const [setOrder, response] = useMutation<BinanceBuyOrder, BinanceBuyOrderVariables>(SET_BINANCE_BUY_ORDER, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [
+      {
+        query: GET_ORDERS
+      },
+      {
+        query: GET_BINANCE_ORDERS
+      }
+    ]
   })
+
+  useEffect(() => {
+    setLoading(response.loading)
+  }, [response.loading])
+
+  useEffect(() => {
+    if (response.error) {
+      setError(response.error)
+    }
+  }, [response.error])
 
   const save = useCallback(() => {
     const { priceType, price, quantity, quantityType, quoteOrderQty, symbol: symb } = form.getValues()
@@ -59,7 +79,7 @@ export const BinanceDirectBuy = ({ balances, lastPrice, symbol: predefinedSymbol
       // TODO
       console.log('Invalid price')
     } else {
-      setBinanceSellOrder({
+      setOrder({
         variables: {
           symbol: symb,
           priceType,
@@ -70,7 +90,7 @@ export const BinanceDirectBuy = ({ balances, lastPrice, symbol: predefinedSymbol
         }
       })
     }
-  }, [form, setBinanceSellOrder])
+  }, [form, setOrder])
 
   console.log(response.error)
 
@@ -144,7 +164,7 @@ export const BinanceDirectBuy = ({ balances, lastPrice, symbol: predefinedSymbol
         <tr>
           <td />
           <td>
-            <Button color="primary" onClick={save} variant="contained">
+            <Button color="primary" onClick={form.handleSubmit(save)} variant="contained">
               Place buy order
             </Button>
           </td>

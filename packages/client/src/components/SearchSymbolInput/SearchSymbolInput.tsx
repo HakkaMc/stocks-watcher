@@ -8,9 +8,9 @@ import { Input } from '../../form'
 import styles from './styles.module.scss'
 import { GET_DASHBOARD, SYMBOL_LIST_QUERY, SAVE_SYMBOL_TO_DASHBOARD } from '../../gqls'
 
-type FormValues = {
-  symbol: string
-}
+// type FormValues = {
+//   symbol: string
+// }
 
 type Props = {
   save: (symbol: string) => void
@@ -18,11 +18,13 @@ type Props = {
 }
 
 export const SearchSymbolInput = ({ save, white }: Props) => {
+  const [inputName] = useState(`${Math.random()}_${Date.now()}`)
+
   const [getSymbols, { data, loading, error }] = useLazyQuery<{ findSymbols: Array<SymbolType> }>(SYMBOL_LIST_QUERY)
 
   const [symbols, setSymbols] = useState<Array<SymbolType>>([])
 
-  const form = useForm<FormValues>()
+  const form = useForm()
 
   useEffect(() => {
     if (!loading && !error && data && data.findSymbols) {
@@ -33,7 +35,7 @@ export const SearchSymbolInput = ({ save, white }: Props) => {
   const selectSymbol = useCallback(
     (symbolObj: SymbolType) => () => {
       form.reset({
-        symbol: ''
+        [inputName]: ''
       })
       setSymbols([])
       save(symbolObj.symbol)
@@ -44,7 +46,7 @@ export const SearchSymbolInput = ({ save, white }: Props) => {
   const onBlur = useCallback(() => {
     setTimeout(() => {
       form.reset({
-        symbol: ''
+        [inputName]: ''
       })
       setSymbols([])
     }, 300)
@@ -72,10 +74,11 @@ export const SearchSymbolInput = ({ save, white }: Props) => {
 
   return (
     <div className={styles.container}>
-      <form className={styles.form}>
+      <div className={styles.form}>
         <Input
+          autoComplete="new-password"
           form={form}
-          name="symbol"
+          name={inputName}
           onBlur={onBlur}
           onChange={onChange}
           placeholder="Search symbol"
@@ -84,7 +87,7 @@ export const SearchSymbolInput = ({ save, white }: Props) => {
         <div className={classnames(styles.loading, { [styles.show]: loading })}>
           <AutorenewIcon />
         </div>
-      </form>
+      </div>
       <div className={styles.listStaticContainer}>
         {symbols.length > 0 && (
           <>

@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="apollo" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/node_modules/@apollo" />
+        <item url="file://$PROJECT_DIR$/node_modules/@apollographql" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/node_modules/@apollo" />
+      <root url="file://$PROJECT_DIR$/node_modules/@apollographql" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

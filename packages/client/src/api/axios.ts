@@ -9,7 +9,7 @@ export const axiosInstance = axios.create({
 })
 
 axiosInstance.interceptors.request.use((request) => {
-  const accessToken = window.sessionStorage.getItem('accessToken')
+  const accessToken = window.localStorage.getItem('accessToken')
 
   if (accessToken) {
     request.headers.Authorization = `Bearer ${accessToken}`

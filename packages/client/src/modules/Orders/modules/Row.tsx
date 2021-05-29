@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
 import { IconButton } from '@material-ui/core'
-import { Order } from '@sw/shared/src/graphql'
 import { FormattedDate, FormattedTime } from 'react-intl'
 import { useMutation } from '@apollo/client'
 
@@ -8,17 +7,18 @@ import { CloseIcon } from '../../../utils/icons'
 import { CANCEL_ORDER, GET_ORDERS } from '../../../gqls'
 import { ErrorModal } from '../../../components'
 import { QuantityType } from '../../../binanceTypes'
+import { Orders_getOrders } from '../../../types/graphql/generated/Orders'
 
-type Props = Order
+type Props = Orders_getOrders
 
-const fixedTrailingStop = (order: Order) => {
+const fixedTrailingStop = (order: Orders_getOrders) => {
   let quantity = null
-  switch (order.fixedTrailingStop?.quantityType) {
+  switch (order.quantityType) {
     case QuantityType.QuoteOrderQty:
-      quantity = `${order.fixedTrailingStop.quoteOrderQty} $`
+      quantity = `${order.quoteOrderQty} $`
       break
     case QuantityType.Quantity:
-      quantity = order.fixedTrailingStop?.quantity
+      quantity = order.quantity
       break
     default:
   }
@@ -26,25 +26,25 @@ const fixedTrailingStop = (order: Order) => {
   return [
     <>
       <div>
-        {order.fixedTrailingStop?.activateOnPrice} $ / {order.fixedTrailingStop?.sellOnPrice} $
+        {order.activateOnPrice} $ / {order.sellOnPrice} $
       </div>
-      <div>{order.fixedTrailingStop?.priceType}</div>
+      <div>{order.priceType}</div>
     </>,
     <>
-      <div>{order.fixedTrailingStop?.quantityType}</div>
+      <div>{order.quantityType}</div>
       <div>{quantity}</div>
     </>
   ]
 }
 
-const movingBuy = (order: Order) => {
+const movingTrailingStop = (order: Orders_getOrders) => {
   let quantity = null
-  switch (order.movingBuy?.quantityType) {
+  switch (order.quantityType) {
     case QuantityType.QuoteOrderQty:
-      quantity = `${order.movingBuy.quoteOrderQty} $`
+      quantity = `${order.quoteOrderQty} $`
       break
     case QuantityType.Quantity:
-      quantity = order.movingBuy?.quantity
+      quantity = order.quantity
       break
     default:
   }
@@ -52,15 +52,87 @@ const movingBuy = (order: Order) => {
   return [
     <>
       <div>
-        {order.movingBuy?.activateOnPrice} $ / {order.movingBuy?.percent} %
+        {order.activateOnPrice} $ / {order.percent}%
       </div>
-      <div>{order.movingBuy?.priceType}</div>
+      <div>{order.priceType}</div>
     </>,
     <>
-      <div>{order.movingBuy?.quantityType}</div>
+      <div>{order.quantityType}</div>
       <div>{quantity}</div>
     </>
   ]
+}
+
+const movingBuy = (order: Orders_getOrders) => {
+  let quantity = null
+  switch (order.quantityType) {
+    case QuantityType.QuoteOrderQty:
+      quantity = `${order.quoteOrderQty} $`
+      break
+    case QuantityType.Quantity:
+      quantity = order.quantity
+      break
+    default:
+  }
+
+  return [
+    <>
+      <div>
+        {order.activateOnPrice} $ / {order.percent} %
+      </div>
+      <div>{order.priceType}</div>
+    </>,
+    <>
+      <div>{order.quantityType}</div>
+      <div>{quantity}</div>
+    </>
+  ]
+}
+
+const consolidation = (order: Orders_getOrders) => {
+  let quantity = null
+  switch (order.quantityType) {
+    case QuantityType.QuoteOrderQty:
+      quantity = `${order.quoteOrderQty} $`
+      break
+    case QuantityType.Quantity:
+      quantity = order.quantity
+      break
+    default:
+  }
+
+  return [
+    <>
+      <div>
+        {order.activateOnPrice} $ / {order.sellOnPrice} $
+      </div>
+      <div>{order.priceType}</div>
+    </>,
+    <>
+      <div>{order.quantityType}</div>
+      <div>{quantity}</div>
+    </>
+  ]
+}
+
+const getQuantity = (order: Orders_getOrders) => {
+  let quantity = null
+  switch (order.quantityType) {
+    case QuantityType.QuoteOrderQty:
+      quantity = `${order.quoteOrderQty} $`
+      break
+    case QuantityType.Quantity:
+      quantity = order.quantity
+      break
+    default:
+  }
+
+  return (
+    <>
+      <div>{order.quantityType}</div>
+      <div>{quantity}</div>
+    </>
+  )
 }
 
 export const Row = (order: Props) => {
@@ -91,8 +163,15 @@ export const Row = (order: Props) => {
       case 'FIXED_TRAILING_STOP':
         return fixedTrailingStop(order)
 
+      case 'MOVING_TRAILING_STOP':
+        return movingTrailingStop(order)
+
       case 'MOVING_BUY':
         return movingBuy(order)
+
+      case 'CONSOLIDATION':
+        return consolidation(order)
+
       default:
     }
     return [null, null]
@@ -105,8 +184,10 @@ export const Row = (order: Props) => {
         <td>
           <div>{order.type}</div>
         </td>
-        <td>{detail[0]}</td>
-        <td>{detail[1]}</td>
+        <td>{order.activateOnPrice}</td>
+        <td>{order.percent > 0 ? `${order.percent}%` : order.sellOnPrice}</td>
+        <td>{order.priceType}</td>
+        <td>{getQuantity(order)}</td>
         <td>
           <FormattedDate value={order.createdAt} /> <FormattedTime value={order.createdAt} />
         </td>

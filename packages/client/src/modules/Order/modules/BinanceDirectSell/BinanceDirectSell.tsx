@@ -1,21 +1,27 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Box, Button, Radio, RadioGroup, FormControlLabel } from '@material-ui/core'
 import { Controller, useForm } from 'react-hook-form'
-import { useLazyQuery } from '@apollo/client'
-import { BinanceBalance, BinanceLastPrice } from '@sw/shared/src/graphql'
-import { round, parseNumber } from '../../../../utils/mix'
+import { useMutation } from '@apollo/client'
+import { parseNumber } from '../../../../utils/mix'
 import { PriceType, QuantityType } from '../../../../binanceTypes'
 import { Input } from '../../../../form'
-import { SET_BINANCE_SELL_ORDER } from '../../../../gqls'
+import { GET_BINANCE_ORDERS, GET_ORDERS, SET_BINANCE_SELL_ORDER } from '../../../../gqls'
 import { SymbolList } from '../SymbolList/SymbolList'
+import { ErrorModal, Label } from '../../../../components'
+import { BinanceLastPriceSubscription_binanceLastPrice as LastPrice } from '../../../../types/graphql/generated/BinanceLastPriceSubscription'
+import { BinanceAccountInformation_getBinanceAccountInformation_balances as Balance } from '../../../../types/graphql/generated/BinanceAccountInformation'
+
 import styles from '../../styles.module.scss'
+import { BinanceSellOrder, BinanceSellOrderVariables } from '../../../../types/graphql/generated/BinanceSellOrder'
 
 type Props = {
   assetAmount: number
-  balances: Array<BinanceBalance>
-  symbol: string
+  balances: Array<Balance>
+  lastPrice?: LastPrice
+  setError: (error: any) => void
+  setLoading: (value: boolean) => void
   setSymbol: (symbol: string) => void
-  lastPrice?: BinanceLastPrice
+  symbol: string
 }
 
 type FormValues = {
@@ -27,7 +33,15 @@ type FormValues = {
   symbol: string
 }
 
-export const BinanceDirectSell = ({ assetAmount, balances, lastPrice, symbol: predefinedSymbol, setSymbol }: Props) => {
+export const BinanceDirectSell = ({
+  assetAmount,
+  balances,
+  lastPrice,
+  symbol: predefinedSymbol,
+  setSymbol,
+  setLoading,
+  setError
+}: Props) => {
   const form = useForm<FormValues>({
     defaultValues: {
       symbol: predefinedSymbol,
@@ -36,9 +50,27 @@ export const BinanceDirectSell = ({ assetAmount, balances, lastPrice, symbol: pr
     }
   })
 
-  const [setBinanceSellOrder, response] = useLazyQuery<{ setBinanceSellOrder: string }>(SET_BINANCE_SELL_ORDER, {
-    fetchPolicy: 'network-only'
+  const [setOrder, response] = useMutation<BinanceSellOrder, BinanceSellOrderVariables>(SET_BINANCE_SELL_ORDER, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [
+      {
+        query: GET_ORDERS
+      },
+      {
+        query: GET_BINANCE_ORDERS
+      }
+    ]
   })
+
+  useEffect(() => {
+    setLoading(response.loading)
+  }, [response.loading])
+
+  useEffect(() => {
+    if (response.error) {
+      setError(response.error)
+    }
+  }, [response.error])
 
   const save = useCallback(() => {
     const { priceType, price, quantity, quantityType, quoteOrderQty, symbol: symb } = form.getValues()
@@ -52,7 +84,7 @@ export const BinanceDirectSell = ({ assetAmount, balances, lastPrice, symbol: pr
       // TODO
       console.log('Invalid price')
     } else {
-      setBinanceSellOrder({
+      setOrder({
         variables: {
           symbol: symb,
           priceType,
@@ -63,84 +95,93 @@ export const BinanceDirectSell = ({ assetAmount, balances, lastPrice, symbol: pr
         }
       })
     }
-  }, [form, setBinanceSellOrder])
+  }, [form, setOrder])
 
   console.log(response.error)
 
   return (
-    <table className={styles.table}>
-      <tbody>
-        <tr>
-          <td>Symbol:</td>
-          <td>
-            <SymbolList form={form} balances={balances} onChange={setSymbol} />
-          </td>
-        </tr>
-        <tr>
-          <td>Sell on:</td>
-          <td>
-            <Controller
-              control={form.control}
-              name="priceType"
-              render={({ field: { onBlur, ref, onChange, value } }) => (
-                <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
-                  <Box>
-                    <FormControlLabel value={PriceType.Market} control={<Radio />} label="Market" />
-                  </Box>
-                  <Box>
-                    <FormControlLabel value={PriceType.Middle} control={<Radio />} label="Middle" />
-                  </Box>
-                  <Box>
-                    <FormControlLabel value={PriceType.Price} control={<Radio />} label="Price" />
-                    <Input form={form} name="price" disabled={value !== PriceType.Price} />
-                  </Box>
-                </RadioGroup>
-              )}
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>Quantity:</td>
-          <td>
-            <Controller
-              control={form.control}
-              name="quantityType"
-              render={({ field: { onBlur, ref, onChange, value } }) => (
-                <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
-                  <Box>
-                    <FormControlLabel value={QuantityType.All} control={<Radio />} label="All" />
-                    {assetAmount} ({assetAmount * (lastPrice?.middle || 0)} $)
-                  </Box>
-                  <Box>
-                    <FormControlLabel
-                      value={QuantityType.Quantity}
-                      control={<Radio />}
-                      label="Quantity of the base Asset"
-                    />
-                    <Input form={form} name="quantity" disabled={value !== QuantityType.Quantity} />
-                  </Box>
-                  <Box>
-                    <FormControlLabel
-                      value={QuantityType.QuoteOrderQty}
-                      control={<Radio />}
-                      label="Quantity of the BUSD to sell"
-                    />
-                    <Input form={form} name="quoteOrderQty" disabled={value !== QuantityType.QuoteOrderQty} />
-                  </Box>
-                </RadioGroup>
-              )}
-            />
-          </td>
-        </tr>
-        <tr>
-          <td />
-          <td>
-            <Button color="primary" onClick={save} variant="contained">
-              Place sell order
-            </Button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <>
+      <table className={styles.table}>
+        <tbody>
+          <tr>
+            <td>
+              <Label>Symbol:</Label>
+            </td>
+            <td>
+              <SymbolList form={form} balances={balances} onChange={setSymbol} />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <Label size={42}>Sell on:</Label>
+            </td>
+            <td>
+              <Controller
+                control={form.control}
+                name="priceType"
+                render={({ field: { onBlur, ref, onChange, value } }) => (
+                  <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
+                    <Box>
+                      <FormControlLabel value={PriceType.Market} control={<Radio />} label="Market" />
+                    </Box>
+                    <Box>
+                      <FormControlLabel value={PriceType.Middle} control={<Radio />} label="Middle" />
+                    </Box>
+                    <Box>
+                      <FormControlLabel value={PriceType.Price} control={<Radio />} label="Price" />
+                      <Input form={form} name="price" disabled={value !== PriceType.Price} />
+                    </Box>
+                  </RadioGroup>
+                )}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <Label size={42}>Quantity:</Label>
+            </td>
+            <td>
+              <Controller
+                control={form.control}
+                name="quantityType"
+                render={({ field: { onBlur, ref, onChange, value } }) => (
+                  <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
+                    <Box>
+                      <FormControlLabel value={QuantityType.All} control={<Radio />} label="All" />
+                      {assetAmount} ({assetAmount * (lastPrice?.middle || 0)} $)
+                    </Box>
+                    <Box>
+                      <FormControlLabel
+                        value={QuantityType.Quantity}
+                        control={<Radio />}
+                        label="Quantity of the base Asset"
+                      />
+                      <Input form={form} name="quantity" disabled={value !== QuantityType.Quantity} />
+                    </Box>
+                    <Box>
+                      <FormControlLabel
+                        value={QuantityType.QuoteOrderQty}
+                        control={<Radio />}
+                        label="Quantity of the BUSD to sell"
+                      />
+                      <Input form={form} name="quoteOrderQty" disabled={value !== QuantityType.QuoteOrderQty} />
+                    </Box>
+                  </RadioGroup>
+                )}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td />
+            <td>
+              <Button color="primary" onClick={save} variant="contained">
+                Place sell order
+              </Button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ErrorModal error={response.loading ? '' : response.error} />
+    </>
   )
 }

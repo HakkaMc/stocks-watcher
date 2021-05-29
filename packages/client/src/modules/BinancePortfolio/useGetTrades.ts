@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react'
-import { BinanceTrade, BinanceExchangeInformation } from '@sw/shared/src/graphql'
+import React, { useState } from 'react'
 
-import { GET_BINANCE_EXCHANGE_INFORMATION, GET_BINANCE_TRADES } from '../../gqls'
+import { GET_BINANCE_SYMBOLS, GET_BINANCE_TRADES } from '../../gqls'
 import { apolloClient } from '../../api/apollo'
+import { BinanceSymbols_getBinanceSymbols } from '../../types/graphql/generated/BinanceSymbols'
+import { BinanceTrades_getBinanceTrades } from '../../types/graphql/generated/BinanceTrades'
 
 type Props = {
   asset: string
@@ -11,11 +12,11 @@ type Props = {
 type State = {
   loading: boolean
   error: any
-  data: Array<BinanceTrade>
+  data: Array<BinanceTrades_getBinanceTrades>
 }
 
 type Query = {
-  data: Array<BinanceTrade>
+  data: Array<BinanceTrades_getBinanceTrades>
   error: any
 }
 
@@ -45,17 +46,17 @@ const query = async (symbol: string): Promise<Query> =>
       )
   })
 
-const exchangeInfoQuery = async (): Promise<{ data: Array<BinanceExchangeInformation>; error: any }> =>
+const exchangeInfoQuery = async (): Promise<{ data: Array<BinanceSymbols_getBinanceSymbols>; error: any }> =>
   new Promise((resolve) => {
     apolloClient
       .query({
-        query: GET_BINANCE_EXCHANGE_INFORMATION
+        query: GET_BINANCE_SYMBOLS
       })
       .then(
         (response) => {
           return resolve({
             error: '',
-            data: response.data.getBinanceExchangeInformation
+            data: response.data.getBinanceSymbols
           })
         },
         (error) => {
@@ -114,7 +115,7 @@ export const useGetTrades = ({ asset }: Props): [() => void, State] => {
           error: responses[0].error
         })
       } else {
-        let data: Array<BinanceTrade> = []
+        let data: Array<BinanceTrades_getBinanceTrades> = []
         responses.forEach((response) => {
           data = data.concat(response.data)
         })

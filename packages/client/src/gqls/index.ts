@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const GET_DASHBOARD = gql`
-  query {
+  query getDashboard {
     getDashboard {
       watchlists {
         _id
@@ -34,6 +34,20 @@ export const LAST_PRICE_SUBSCRIPTION = gql`
 export const BINANCE_LAST_PRICE_SUBSCRIPTION = gql`
   subscription BinanceLastPriceSubscription($symbol: String!) {
     binanceLastPrice(symbol: $symbol) {
+      ask
+      bid
+      diff
+      diffPercentage
+      middle
+      symbol
+      timestamp
+    }
+  }
+`
+
+export const GET_BINANCE_CACHED_LAST_PRICE = gql`
+  query BinanceCachedLastPrice($symbol: String!) {
+    getBinanceCachedLastPrice(symbol: $symbol) {
       ask
       bid
       diff
@@ -137,7 +151,7 @@ export const CHANGE_WATCHLIST_SETTINGS = gql`
 `
 
 export const GET_PRICES = gql`
-  query($symbol: String!, $timestampFrom: Float, $timestampTo: Float, $range: String) {
+  query getPrices($symbol: String!, $timestampFrom: Float, $timestampTo: Float, $range: String) {
     getPrices(symbol: $symbol, timestampFrom: $timestampFrom, timestampTo: $timestampTo, range: $range) {
       priceArray {
         price
@@ -148,7 +162,7 @@ export const GET_PRICES = gql`
 `
 
 export const GET_CHART_GROUPS = gql`
-  query {
+  query getChartGroups {
     getChartGroups {
       _id
       name
@@ -165,7 +179,7 @@ export const GET_CHART_GROUPS = gql`
 `
 
 export const GET_CHART_GROUP = gql`
-  query($chartGroupId: String!) {
+  query getChartGroup($chartGroupId: String!) {
     getChartGroup(chartGroupId: $chartGroupId) {
       _id
       name
@@ -208,7 +222,7 @@ export const REMOVE_SYMBOL_FROM_DASHBOARD = gql`
 `
 
 export const GET_NOTE = gql`
-  query {
+  query getNote {
     getNote {
       text
     }
@@ -216,7 +230,7 @@ export const GET_NOTE = gql`
 `
 
 export const SAVE_NOTE = gql`
-  mutation($text: String!) {
+  mutation saveNote($text: String!) {
     saveNote(text: $text)
   }
 `
@@ -239,13 +253,13 @@ export const SET_PRICE_ALERT = gql`
 `
 
 export const REMOVE_PRICE_ALERT = gql`
-  mutation setPriceAlert($id: String!) {
+  mutation removePriceAlert($id: String!) {
     removePriceAlert(id: $id)
   }
 `
 
 export const GET_REMINDERS = gql`
-  query {
+  query getReminders {
     getReminders {
       _id
       title
@@ -268,7 +282,7 @@ export const REMOVE_REMINDER = gql`
 `
 
 export const GET_BINANCE_ACCOUNT_INFORMATION = gql`
-  {
+  query BinanceAccountInformation {
     getBinanceAccountInformation {
       accountType
       balances {
@@ -311,7 +325,7 @@ export const GET_BINANCE_ACCOUNT_INFORMATION = gql`
 //   }
 // `
 export const SET_BINANCE_SELL_ORDER = gql`
-  query setBinanceSellOrder(
+  mutation BinanceSellOrder(
     $symbol: String!
     $priceType: String!
     $price: Float!
@@ -331,7 +345,7 @@ export const SET_BINANCE_SELL_ORDER = gql`
 `
 
 export const SET_BINANCE_BUY_ORDER = gql`
-  query setBinanceBuyOrder(
+  mutation BinanceBuyOrder(
     $symbol: String!
     $priceType: String!
     $price: Float!
@@ -351,11 +365,23 @@ export const SET_BINANCE_BUY_ORDER = gql`
 `
 
 export const GET_BINANCE_TRADES = gql`
-  query getBinanceTrades($symbol: String!) {
-    getBinanceTrades(symbol: $symbol) {
+  query BinanceTrades(
+    $symbol: String
+    $baseAsset: String
+    $quoteAsset: String
+    $limit: Int
+    $sort: SortFindManyBinanceTradeInput
+  ) {
+    getBinanceTrades(
+      limit: $limit
+      filter: { symbol: $symbol, baseAsset: $baseAsset, quoteAsset: $quoteAsset }
+      sort: $sort
+    ) {
+      baseAsset
+      quoteAsset
       commission
       commissionAsset
-      id
+      tradeId
       isBuyer
       orderId
       price
@@ -367,20 +393,20 @@ export const GET_BINANCE_TRADES = gql`
   }
 `
 
-export const GET_BINANCE_EXCHANGE_INFORMATION = gql`
-  query getBinanceExchangeInformation {
-    getBinanceExchangeInformation {
+export const GET_BINANCE_SYMBOLS = gql`
+  query BinanceSymbols($quoteAsset: String) {
+    getBinanceSymbols(limit: 100000, filter: { quoteAsset: $quoteAsset }) {
+      symbol
       baseAsset
+      quoteAsset
       filters
       ocoAllowed
-      quoteAsset
-      symbol
     }
   }
 `
 
 export const GET_BINANCE_ORDERS = gql`
-  query getBinanceOrders {
+  query BinanceOrders {
     getBinanceOrders {
       symbol
       orderId
@@ -404,7 +430,7 @@ export const GET_BINANCE_ORDERS = gql`
 `
 
 export const CANCEL_BINANCE_ORDER = gql`
-  query cancelBinanceOrder($symbol: String!, $orderId: Int!, $origClientOrderId: String!) {
+  mutation CancelBinanceOrder($symbol: String!, $orderId: Int!, $origClientOrderId: String) {
     cancelBinanceOrder(symbol: $symbol, orderId: $orderId, origClientOrderId: $origClientOrderId) {
       clientOrderId
       cummulativeQuoteQty
@@ -423,75 +449,34 @@ export const CANCEL_BINANCE_ORDER = gql`
   }
 `
 
-export const SET_TRAILING_STOP_ORDER = gql`
-  mutation setTrailingStopOrder(
-    $activateOnPrice: Float!
-    $sellOnPrice: Float!
-    $symbol: String!
-    $priceType: String!
-    $quantityType: String!
-    $quantity: Float!
-    $quoteOrderQty: Float!
-  ) {
-    setTrailingStopOrder(
-      symbol: $symbol
-      activateOnPrice: $activateOnPrice
-      sellOnPrice: $sellOnPrice
-      priceType: $priceType
-      quantityType: $quantityType
-      quantity: $quantity
-      quoteOrderQty: $quoteOrderQty
-    )
+export const REFRESH_BINANCE_TRADES = gql`
+  mutation refreshBinanceTrades {
+    refreshBinanceTrades
   }
 `
 
-export const SET_MOVING_BUY_ORDER = gql`
-  mutation setMovingBuyOrder(
-    $activateOnPrice: Float!
-    $percent: Float!
-    $symbol: String!
-    $priceType: String!
-    $quantityType: String!
-    $quantity: Float!
-    $quoteOrderQty: Float!
-  ) {
-    setMovingBuyOrder(
-      symbol: $symbol
-      activateOnPrice: $activateOnPrice
-      percent: $percent
-      priceType: $priceType
-      quantityType: $quantityType
-      quantity: $quantity
-      quoteOrderQty: $quoteOrderQty
-    )
+export const SET_ORDER = gql`
+  mutation SetOrder($record: CreateOneOrderInput!) {
+    setOrder(record: $record) {
+      error {
+        message
+      }
+    }
   }
 `
 
 export const GET_ORDERS = gql`
-  query getOrders {
-    getOrders {
+  query Orders {
+    getOrders(filter: { active: true }) {
       _id
-      fixedTrailingStop {
-        activateOnPrice
-        sellOnPrice
-        activatedTimestamp
-        priceType
-        quantity
-        quantityType
-        quoteOrderQty
-      }
-      movingBuy {
-        activateOnPrice
-        percent
-        priceType
-        quantity
-        quantityType
-        quoteOrderQty
-      }
-      percentageTrailingStop {
-        activateOnPrice
-        percentageDecrease
-      }
+      activateOnPrice
+      sellOnPrice
+      activatedTimestamp
+      priceType
+      quantity
+      quantityType
+      quoteOrderQty
+      percent
       type
       createdAt
       symbol
@@ -503,5 +488,20 @@ export const GET_ORDERS = gql`
 export const CANCEL_ORDER = gql`
   mutation cancelOrder($orderId: String!) {
     cancelOrder(orderId: $orderId)
+  }
+`
+
+export const GET_BINANCE_PROFILE = gql`
+  query GetBinanceProfile {
+    getBinanceProfile {
+      countedBalance {
+        amount
+        asset
+        averagePurchasePrice
+        quantity
+        realizedProfit
+      }
+      updatedAt
+    }
   }
 `

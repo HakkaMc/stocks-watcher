@@ -1,12 +1,11 @@
 import { ceilToMinute, getDayPoints } from '@sw/shared/src/time'
-import { getStockPrices } from './finnhub/finnhubClient'
-import { UserTsType } from './database/user/schema'
-import { DashboardTsModel, DashboardTsType } from './database/dashboard/schema'
-import { ServerSettingTsModel } from './database/serverSetting/schema'
-import { SymbolTsModel, SymbolTsType } from './database/symbol/schema'
-import { PriceAlertTsModel, PriceAlertTsType } from './database/priceAlert/schema'
-import { getLastPrice } from './cache'
-import { sendEmail } from './emailSender'
+import { getStockPrices } from '../finnhub/finnhubClient'
+import { UserTsType } from '../database/user/schema'
+import { DashboardTsModel, DashboardTsType } from '../database/dashboard/schema'
+import { ServerSettingTsModel } from '../database/serverSetting/schema'
+import { SymbolTsModel } from '../database/symbol/schema'
+import { PriceAlertTsModel, PriceAlertTsType } from '../database/priceAlert/schema'
+import { sendEmail } from '../utils/emailSender'
 
 const getIsStockOpened = () => {
   const dayPoints = getDayPoints()

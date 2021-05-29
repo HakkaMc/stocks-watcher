@@ -3,13 +3,24 @@ import { GraphQLNonNull, GraphQLList } from 'graphql'
 import { placeBuyOrder, placeSellOrder } from './orders'
 import * as api from './queries'
 import { pubSub } from '../pubSub'
-import { lastPriceSubscribe } from './ws'
+import { getCachedLastPrice, lastPriceSubscribe } from './ws'
 import { ResolverContext } from '../types'
+import { getSymbolAveragePrice } from './queries'
 
-const Binance = schemaComposer.createObjectTC({
-  name: 'Binance',
-  fields: {}
-})
+const BinanceLastPrice = schemaComposer
+  .createObjectTC({
+    name: 'BinanceLastPrice',
+    fields: {
+      symbol: 'String!',
+      ask: 'Float!',
+      bid: 'Float!',
+      middle: 'Float!',
+      diff: 'Float!',
+      diffPercentage: 'Float!',
+      timestamp: 'Float!'
+    }
+  })
+  .getType()
 
 const BinanceNewOrderResponseFull = schemaComposer.createObjectTC({
   name: 'BinanceNewOrderResponseFull',
@@ -47,12 +58,10 @@ const BinanceNewOrderResponseFull = schemaComposer.createObjectTC({
   }
 })
 
-// ResolverDefinition<TSource, TContext, TArgs>
-// const setBinanceSellOrder: ResolverDefinition<any, any, any> = {
-Binance.addResolver({
-  kind: 'query',
+const setBinanceSellOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
+  kind: 'mutation',
   name: 'setBinanceSellOrder',
-  type: BinanceNewOrderResponseFull,
+  type: 'String!',
   args: {
     symbol: 'String!',
     priceType: 'String!',
@@ -61,24 +70,24 @@ Binance.addResolver({
     quantity: 'Float!',
     quoteOrderQty: 'Float!'
   },
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
+  resolve: async (source, args, context) => {
     // resolve: async (params: any) => {
     // const { userId } = params.context.session
 
-    const result = await placeSellOrder(params.args)
+    const result = await placeSellOrder(args)
 
     if (result.error) {
       return new Error(result.error)
     }
 
-    return result.data
+    return 'OK'
   }
-})
+}
 
-Binance.addResolver({
-  kind: 'query',
+const setBinanceBuyOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
+  kind: 'mutation',
   name: 'setBinanceBuyOrder',
-  type: BinanceNewOrderResponseFull,
+  type: 'String!',
   args: {
     symbol: 'String!',
     priceType: 'String!',
@@ -87,22 +96,22 @@ Binance.addResolver({
     quantity: 'Float!',
     quoteOrderQty: 'Float!'
   },
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
+  resolve: async (source, args, context) => {
     // resolve: async (params: any) => {
     // const { userId } = params.context.session
 
-    const result = await placeBuyOrder(params.args)
+    const result = await placeBuyOrder(args)
 
     if (result.error) {
       return new Error(result.error)
     }
 
-    return result.data
+    return 'OK'
   }
-})
+}
 
 // ResolverDefinition<TSource, TContext, TArgs>
-const getBinanceAccountInformation: ObjectTypeComposerFieldConfigAsObjectDefinition<any, any, any> = {
+const getBinanceAccountInformation: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
   kind: 'query',
   name: 'getBinanceAccountInformation',
   type: schemaComposer.createObjectTC({
@@ -147,86 +156,7 @@ const getBinanceAccountInformation: ObjectTypeComposerFieldConfigAsObjectDefinit
   }
 }
 
-// ObjectTypeComposerFieldConfigAsObjectDefinition<TSource, TContext, TArgs>
-const getBinanceTrades: ObjectTypeComposerFieldConfigAsObjectDefinition<
-  any,
-  ResolverContext,
-  {
-    symbol: string
-  }
-> = {
-  kind: 'query',
-  name: 'getBinanceTrades',
-  type: new GraphQLNonNull(
-    new GraphQLList(
-      new GraphQLNonNull(
-        schemaComposer
-          .createObjectTC({
-            name: 'BinanceTrade',
-            fields: {
-              id: 'Float!',
-              orderId: 'Float!',
-              symbol: 'String!',
-              isBuyer: 'Boolean!',
-              price: 'Float!',
-              qty: 'Float!',
-              quoteQty: 'Float!',
-              time: 'Float!',
-              commission: 'Float!',
-              commissionAsset: 'String!'
-            }
-          })
-          .getType()
-      )
-    )
-  ),
-  args: {
-    symbol: 'String!'
-  },
-  resolve: async (source, args, context) => {
-    const result = await api.getTrades(args.symbol)
-
-    if (result.error) {
-      return new Error(result.error)
-    }
-
-    return result.data
-  }
-}
-
-Binance.addResolver({
-  kind: 'query',
-  name: 'getBinanceExchangeInformation',
-  type: new GraphQLNonNull(
-    new GraphQLList(
-      new GraphQLNonNull(
-        schemaComposer
-          .createObjectTC({
-            name: 'BinanceExchangeInformation',
-            fields: {
-              symbol: 'String!',
-              baseAsset: 'String!',
-              quoteAsset: 'String!',
-              filters: 'JSON!',
-              ocoAllowed: 'Boolean!'
-            }
-          })
-          .getType()
-      )
-    )
-  ),
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
-    const result = await api.getExchangeInfo()
-
-    if (result.error) {
-      return new Error(result.error)
-    }
-
-    return Object.values(result.data) || []
-  }
-})
-
-Binance.addResolver({
+const getBinanceOrders: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
   kind: 'query',
   name: 'getBinanceOrders',
   type: new GraphQLNonNull(
@@ -260,7 +190,7 @@ Binance.addResolver({
       )
     )
   ),
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
+  resolve: async (source, args, context) => {
     const result = await api.getOrders()
 
     if (result.error) {
@@ -269,10 +199,10 @@ Binance.addResolver({
 
     return result.data
   }
-})
+}
 
-Binance.addResolver({
-  kind: 'query',
+const cancelBinanceOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
+  kind: 'mutation',
   name: 'cancelBinanceOrder',
   type: new GraphQLNonNull(
     new GraphQLList(
@@ -305,8 +235,8 @@ Binance.addResolver({
     orderId: 'Int',
     origClientOrderId: 'String'
   },
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
-    const result = await api.cancelOrder({ ...params.args })
+  resolve: async (source, args, context) => {
+    const result = await api.cancelOrder({ ...args })
 
     if (result.error) {
       return new Error(result.error)
@@ -314,37 +244,53 @@ Binance.addResolver({
 
     return result.data
   }
-})
+}
+
+const getBinanceCachedLastPrice: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
+  king: 'query',
+  name: 'getBinanceCachedLastPrice',
+  type: new GraphQLNonNull(BinanceLastPrice),
+  args: {
+    symbol: 'String!'
+  },
+  resolve: async (source, args, context) => {
+    const price = getCachedLastPrice(args.symbol)
+
+    if (price) {
+      return price
+    }
+    const result = await getSymbolAveragePrice(args.symbol)
+    if (result.error) {
+      return new Error(result.error)
+    }
+    return {
+      symbol: args.symbol,
+      ask: result.data,
+      bid: result.data,
+      middle: result.data,
+      diff: 0,
+      diffPercentage: 0,
+      timestamp: Date.now()
+    }
+  }
+}
 
 export const binanceResolvers = {
   query: {
-    // getBinanceReport: Report.getResolver('getBinanceReport'),
-    setBinanceSellOrder: Binance.getResolver('setBinanceSellOrder'),
-    setBinanceBuyOrder: Binance.getResolver('setBinanceBuyOrder'),
-    // setBinanceSellOrder: setBinanceSellOrder as any,
     getBinanceAccountInformation: getBinanceAccountInformation as any,
-    // getBinanceTrades: Binance.getResolver('getBinanceTrades'),
-    getBinanceTrades,
-    getBinanceExchangeInformation: Binance.getResolver('getBinanceExchangeInformation'),
-    getBinanceOrders: Binance.getResolver('getBinanceOrders'),
-    cancelBinanceOrder: Binance.getResolver('cancelBinanceOrder')
+    getBinanceOrders,
+    getBinanceCachedLastPrice
+  },
+  mutation: {
+    setBinanceSellOrder,
+    setBinanceBuyOrder,
+    cancelBinanceOrder
   },
   subscription: {
     binanceLastPrice: {
       kind: 'subscription',
       name: 'binanceLastPrice',
-      type: schemaComposer.createObjectTC({
-        name: 'BinanceLastPrice',
-        fields: {
-          symbol: 'String!',
-          ask: 'Float!',
-          bid: 'Float!',
-          middle: 'Float!',
-          diff: 'Float!',
-          diffPercentage: 'Float!',
-          timestamp: 'Float!'
-        }
-      }),
+      type: new GraphQLNonNull(BinanceLastPrice),
       args: {
         symbol: 'String'
       },

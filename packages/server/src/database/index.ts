@@ -12,6 +12,9 @@ import { priceAlertResolvers } from './priceAlert/resolvers'
 import { reminderResolvers } from './reminder/resolvers'
 import { binanceResolvers } from '../binance/resolvers'
 import { orderResolvers } from './order/resolvers'
+import { binanceTradeResolvers } from './binanceTrade/resolvers'
+import { binanceSymbolResolvers } from './binanceSymbol/resolvers'
+import { binanceProfileResolvers } from './binanceProfile/resolvers'
 
 export const initDatabase = async () => {
   console.log('initDatabase')
@@ -32,7 +35,10 @@ export const initDatabase = async () => {
     ...priceAlertResolvers.query,
     ...reminderResolvers.query,
     ...binanceResolvers.query,
-    ...orderResolvers.query
+    ...orderResolvers.query,
+    ...binanceTradeResolvers.query,
+    ...binanceSymbolResolvers.query,
+    ...binanceProfileResolvers.query
   })
 
   schemaComposer.Mutation.addFields({
@@ -41,7 +47,9 @@ export const initDatabase = async () => {
     ...noteResolvers.mutation,
     ...priceAlertResolvers.mutation,
     ...reminderResolvers.mutation,
-    ...orderResolvers.mutation
+    ...orderResolvers.mutation,
+    ...binanceResolvers.mutation,
+    ...binanceTradeResolvers.mutation
   })
 
   // @ts-ignore

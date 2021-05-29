@@ -12,6 +12,7 @@ import {
 import { BinanceNewOrderResponseFull } from '@sw/shared/src/graphql'
 import { getAccountInfo, getExchangeInfo, getSymbolAveragePrice, placeOrder } from './queries'
 import { ReturnPromise } from '../types'
+import { BinanceSymbolTsModel } from '../database/binanceSymbol/schema'
 
 type PlaceSellOrderParams = {
   symbol: string
@@ -58,17 +59,7 @@ const enhancePrice = (price: string | number, priceFilter: PriceFilter): number 
 
 export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromise<BinanceNewOrderResponseFull> =>
   new Promise(async (resolve, reject) => {
-    const exchangeInfoResult = await getExchangeInfo(params.symbol)
-
-    if (exchangeInfoResult.error) {
-      return resolve({
-        error: exchangeInfoResult.error,
-        errorData: exchangeInfoResult.errorData,
-        data: {} as any
-      })
-    }
-
-    const exchangeInfo = exchangeInfoResult.data[params.symbol]
+    const exchangeInfo = await BinanceSymbolTsModel.findOne({ symbol: params.symbol })
 
     if (!exchangeInfo) {
       return resolve({
@@ -113,7 +104,7 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
           })
         }
         orderQuery.type = OrderType.LIMIT
-        orderQuery.price = averagePrice.data
+        orderQuery.price = enhancePrice(averagePrice.data, priceFilter)
         orderQuery.timeInForce = TimeInForce.GTC
 
         break
@@ -179,28 +170,20 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
         }
     }
 
-    const result = await placeOrder(orderQuery, false)
+    const testResult = await placeOrder(orderQuery, false)
 
-    if (result.error) {
-      return resolve(result)
+    if (testResult.error) {
+      return resolve(testResult)
     }
-    // return await placeOrder(orderQuery, true)
+
+    const result = await placeOrder(orderQuery, true)
     return resolve(result)
+    // return resolve(testResult)
   })
 
 export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise<BinanceNewOrderResponseFull> =>
   new Promise(async (resolve, reject) => {
-    const exchangeInfoResult = await getExchangeInfo(params.symbol)
-
-    if (exchangeInfoResult.error) {
-      return resolve({
-        error: exchangeInfoResult.error,
-        errorData: exchangeInfoResult.errorData,
-        data: {} as any
-      })
-    }
-
-    const exchangeInfo = exchangeInfoResult.data[params.symbol]
+    const exchangeInfo = await BinanceSymbolTsModel.findOne({ symbol: params.symbol })
 
     if (!exchangeInfo) {
       return resolve({
@@ -245,7 +228,7 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
           })
         }
         orderQuery.type = OrderType.LIMIT
-        orderQuery.price = averagePrice.data
+        orderQuery.price = enhancePrice(averagePrice.data, priceFilter)
         orderQuery.timeInForce = TimeInForce.GTC
 
         if (params.quantityType === QuantityType.QuoteOrderQty) {
@@ -309,7 +292,9 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
             })
           }
 
-          const countedQuantity = enhanceQuantity(params.quoteOrderQty / averagePriceResult.data, lotSize)
+          orderQuery.price = enhancePrice(averagePriceResult.data, priceFilter)
+
+          const countedQuantity = enhanceQuantity(params.quoteOrderQty / orderQuery.price, lotSize)
 
           if (countedQuantity < 0) {
             return resolve({
@@ -331,17 +316,13 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
         })
     }
 
-    const result = await placeOrder(orderQuery, false)
+    const testResult = await placeOrder(orderQuery, false)
 
-    if (result.error) {
-      return resolve(result)
+    if (testResult.error) {
+      return resolve(testResult)
     }
-    // return await placeOrder(orderQuery, true)
-    return resolve(result)
 
-    // return resolve({
-    //   error: result,
-    //   errorData: result.errorData,
-    //   data: result
-    // })
+    const result = await placeOrder(orderQuery, true)
+    return resolve(result)
+    // return resolve(testResult)
   })

@@ -23,7 +23,11 @@ export const Symbol = ({ symbol }: Props) => {
   const [forceRefreshTrigger, setForceRefreshTrigger] = useState(Date.now())
   const [refreshTime, setRefreshTime] = useState('')
 
-  const { data: lastPriceData, loading: lastPriceLoading, error: lastPriceError } = useSubscription<{
+  const {
+    data: lastPriceData,
+    loading: lastPriceLoading,
+    error: lastPriceError
+  } = useSubscription<{
     lastPrice: LastPrice
   }>(LAST_PRICE_SUBSCRIPTION, { variables: { symbol: symbol.symbol } })
 

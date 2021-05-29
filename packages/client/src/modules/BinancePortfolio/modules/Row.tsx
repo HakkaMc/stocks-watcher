@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 import { BinanceBalance, BinanceLastPrice, BinanceTrade } from '@sw/shared/src/graphql'
-import { useSubscription } from '@apollo/client'
+import { useSubscription, useLazyQuery } from '@apollo/client'
 import { IconButton } from '@material-ui/core'
-import { round } from '../../../utils/mix'
+import { FormattedNumber } from 'react-intl'
 
 import { dispatchers } from '../../../redux'
 import { CloseIcon } from '../../../utils/icons'
 import { updateBoughtPrice, updateActualPrice } from '../store'
-import { ModalRoutes } from '../../../constants'
-import { useGetTrades } from '../useGetTrades'
-import { BINANCE_LAST_PRICE_SUBSCRIPTION } from '../../../gqls'
+import { ModalRoutes, OrderDialogType } from '../../../constants'
+import { BINANCE_LAST_PRICE_SUBSCRIPTION, GET_BINANCE_TRADES } from '../../../gqls'
 
 import styles from '../styles.module.scss'
 
@@ -31,13 +30,20 @@ const f = (value: any): number => {
 export const Row = ({ balance, showAll, index }: Props) => {
   const amount = f(balance.free + balance.locked)
 
+  const [getTrades, tradesResponse] = useLazyQuery<{ getBinanceTrades: Array<BinanceTrade> }>(GET_BINANCE_TRADES, {
+    fetchPolicy: 'network-only',
+    variables: {
+      baseAsset: balance.asset,
+      sort: 'TIME_ASC',
+      limit: 10000
+    }
+  })
+
   const lastPriceResponse = useSubscription<{ binanceLastPrice: BinanceLastPrice }>(BINANCE_LAST_PRICE_SUBSCRIPTION, {
     variables: {
       symbol: `${balance.asset}BUSD`
     }
   })
-
-  const [getTrades, tradesResponse] = useGetTrades({ asset: balance.asset })
 
   useEffect(() => {
     updateBoughtPrice(balance.asset, ['USDT', 'BUSD'].includes(balance.asset.toUpperCase()) ? amount : 0)
@@ -50,8 +56,12 @@ export const Row = ({ balance, showAll, index }: Props) => {
 
   const showSellModal = useCallback(() => {
     dispatchers.modal.open({
-      name: ModalRoutes.BinanceSellOrder,
-      props: { symbol: `${balance.asset}BUSD`, amount: balance.free }
+      name: ModalRoutes.Order,
+      props: {
+        symbol: `${balance.asset}BUSD`,
+        amount: balance.free,
+        orderDialogType: OrderDialogType.BinanceDirectSell
+      }
     })
   }, [dispatchers])
 
@@ -81,7 +91,7 @@ export const Row = ({ balance, showAll, index }: Props) => {
   }, [lastPrice, amount])
 
   const report = useMemo(() => {
-    const trades = tradesResponse.data
+    const trades = tradesResponse.data?.getBinanceTrades || []
 
     const rep = {
       amount: 0,
@@ -171,7 +181,7 @@ export const Row = ({ balance, showAll, index }: Props) => {
     }
 
     return rep
-  }, [tradesResponse.data])
+  }, [tradesResponse?.data?.getBinanceTrades])
 
   const [unrealizedProfit, unrealizedPercentageProfit] = useMemo(() => {
     if (!['USDT', 'BUSD'].includes(balance.asset.toUpperCase()) && report.price > 0) {
@@ -199,11 +209,21 @@ export const Row = ({ balance, showAll, index }: Props) => {
             </a>
           </b>
         </td>
-        <td>{round(amount, 4)}</td>
-        <td>{round(report.pricePerShare, 4)} $</td>
-        <td>{round(lastPrice, 4)} $</td>
-        <td>{round(report.price)} $</td>
-        <td>{round(actualPrice)} $</td>
+        <td>
+          <FormattedNumber value={amount} minimumFractionDigits={4} />
+        </td>
+        <td>
+          <FormattedNumber value={report.pricePerShare} minimumFractionDigits={4} style="currency" currency="USD" />
+        </td>
+        <td>
+          <FormattedNumber value={lastPrice} minimumFractionDigits={4} style="currency" currency="USD" />
+        </td>
+        <td>
+          <FormattedNumber value={report.price} minimumFractionDigits={2} style="currency" currency="USD" />
+        </td>
+        <td>
+          <FormattedNumber value={actualPrice} minimumFractionDigits={2} style="currency" currency="USD" />
+        </td>
         <td className={styles.equalCell}>=</td>
         <td
           className={classNames({
@@ -211,7 +231,7 @@ export const Row = ({ balance, showAll, index }: Props) => {
             [styles.red]: unrealizedProfit < 0
           })}
         >
-          {round(unrealizedProfit)} $
+          <FormattedNumber value={unrealizedProfit} minimumFractionDigits={2} style="currency" currency="USD" />
         </td>
 
         <td
@@ -220,7 +240,7 @@ export const Row = ({ balance, showAll, index }: Props) => {
             [styles.red]: unrealizedProfit < 0
           })}
         >
-          {round(unrealizedPercentageProfit)}%
+          <FormattedNumber value={unrealizedPercentageProfit / 100} minimumFractionDigits={2} style="percent" />
         </td>
         <td
           className={classNames({
@@ -228,7 +248,7 @@ export const Row = ({ balance, showAll, index }: Props) => {
             [styles.red]: report.realizedProfit < 0
           })}
         >
-          {round(report.realizedProfit)} $
+          <FormattedNumber value={report.realizedProfit} minimumFractionDigits={2} style="currency" currency="USD" />
         </td>
         <td>
           {!['USDT', 'BUSD'].includes(balance.asset.toUpperCase()) && (

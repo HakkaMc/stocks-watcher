@@ -7,12 +7,15 @@ export const LoginDone = () => {
     if (window.opener) {
       const params = parse(window.location.search)
 
-      window.opener.postMessage({
-        name: 'LOGIN_DONE',
-        accessToken: params.accessToken,
-        refreshToken: params.refreshToken,
-        accessTokenExpiration: params.accessTokenExpiration
-      })
+      window.opener.postMessage(
+        {
+          name: 'LOGIN_DONE',
+          accessToken: params.accessToken,
+          refreshToken: params.refreshToken,
+          accessTokenExpiration: params.accessTokenExpiration
+        },
+        '*'
+      )
     }
     window.close()
   }, [])

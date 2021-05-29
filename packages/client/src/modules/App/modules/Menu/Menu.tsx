@@ -37,6 +37,8 @@ export const Menu = () => {
 
           <MenuItem Icon={<ListIcon color="action" />} text="Orders" noActiveStyle to={ROUTES.Orders} />
 
+          <MenuItem Icon={<ListIcon color="action" />} text="Trades" noActiveStyle to={ROUTES.Trades} />
+
           <MenuItem
             Icon={<NoteIcon color="action" />}
             text="Notes"
@@ -78,9 +80,23 @@ export const Menu = () => {
 
           <MenuItem
             Icon={<AddIcon color="action" />}
+            text="Binance Moving Trailing Stop Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingTrailingStop })}
+          />
+
+          <MenuItem
+            Icon={<AddIcon color="action" />}
             text="Binance Moving Buy Order"
             noActiveStyle
             onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingBuy })}
+          />
+
+          <MenuItem
+            Icon={<AddIcon color="action" />}
+            text="Binance Consolidation Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceConsolidation })}
           />
         </List>
       </Box>

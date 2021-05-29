@@ -1,15 +1,14 @@
-import React, { useMemo } from 'react'
-import classNames from 'classnames'
+import React from 'react'
 import { Box, Typography } from '@material-ui/core'
 import { FormattedNumber } from 'react-intl'
-import { BinanceAccountInformation, BinanceBalance, BinanceLastPrice } from '@sw/shared/src/graphql'
+import { BinanceLastPriceSubscription_binanceLastPrice as LastPrice } from '../../../../types/graphql/generated/BinanceLastPriceSubscription'
 
 type Props = {
   busdAmount: {
     free: number
     locked: number
   }
-  lastPrice?: BinanceLastPrice
+  lastPrice?: LastPrice
   assetAmount: number
 }
 
@@ -68,7 +67,7 @@ export const Info = ({ assetAmount, busdAmount, lastPrice }: Props) => {
         </Typography>
         <Box pl={2}>
           <Typography color="textSecondary">
-            <FormattedNumber value={assetAmount} />
+            <FormattedNumber value={assetAmount} minimumFractionDigits={4} />
           </Typography>
         </Box>
       </Box>

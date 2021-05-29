@@ -4,7 +4,12 @@ import { useQuery } from '@apollo/client'
 import { BinanceBalance, BinanceExchangeInformation } from '@sw/shared/src/graphql'
 
 import { Autocomplete } from '../../../../form'
-import { GET_BINANCE_EXCHANGE_INFORMATION } from '../../../../gqls'
+import { GET_BINANCE_SYMBOLS } from '../../../../gqls'
+import {
+  BinanceSymbols,
+  BinanceSymbols_getBinanceSymbols,
+  BinanceSymbolsVariables
+} from '../../../../types/graphql/generated/BinanceSymbols'
 
 type Props = {
   balances: Array<BinanceBalance>
@@ -13,25 +18,25 @@ type Props = {
 }
 
 export const SymbolList = ({ balances, form, onChange = (value: string) => undefined }: Props) => {
-  const exchangeInformationResponse = useQuery<{ getBinanceExchangeInformation: BinanceExchangeInformation }>(
-    GET_BINANCE_EXCHANGE_INFORMATION,
-    {
-      notifyOnNetworkStatusChange: true
+  const binanceSymbols = useQuery<BinanceSymbols, BinanceSymbolsVariables>(GET_BINANCE_SYMBOLS, {
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      quoteAsset: 'BUSD'
     }
-  )
+  })
 
   const exchangeMap = useMemo(() => {
-    const map: Record<string, BinanceExchangeInformation> = {}
-    const exchangeArray = exchangeInformationResponse?.data?.getBinanceExchangeInformation
+    const map: Record<string, BinanceSymbols_getBinanceSymbols> = {}
+    const symbolArray = binanceSymbols?.data?.getBinanceSymbols
 
-    if (Array.isArray(exchangeArray)) {
-      exchangeArray.forEach((item) => {
-        map[item.symbol] = item
+    if (Array.isArray(symbolArray)) {
+      symbolArray.forEach((symbolObj) => {
+        map[symbolObj.symbol] = symbolObj
       })
     }
 
     return map
-  }, [exchangeInformationResponse?.data?.getBinanceExchangeInformation])
+  }, [binanceSymbols?.data?.getBinanceSymbols])
 
   const symbolList = useMemo(() => {
     if (Array.isArray(balances) && Object.keys(exchangeMap).length) {

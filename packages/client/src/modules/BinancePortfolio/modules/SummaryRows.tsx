@@ -1,5 +1,6 @@
 import React from 'react'
 import classNames from 'classnames'
+import { FormattedNumber } from 'react-intl'
 import styles from '../styles.module.scss'
 import { useStore } from '../store'
 
@@ -22,10 +23,14 @@ export const SummaryRows = () => {
         <td />
         <td />
         <td>
-          <b>{round(boughtPrice)} $</b>
+          <b>
+            <FormattedNumber value={boughtPrice} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td>
-          <b>{round(actualPrice)} $</b>
+          <b>
+            <FormattedNumber value={actualPrice} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td>=</td>
         <td
@@ -34,7 +39,9 @@ export const SummaryRows = () => {
             [styles.red]: gain < 0
           })}
         >
-          <b>{round(gain)} $</b>
+          <b>
+            <FormattedNumber value={gain} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td
           className={classNames({
@@ -42,7 +49,9 @@ export const SummaryRows = () => {
             [styles.red]: percentageGain < 0
           })}
         >
-          <b>{round(percentageGain)}%</b>
+          <b>
+            <FormattedNumber value={percentageGain / 100} minimumFractionDigits={2} style="percent" />
+          </b>
         </td>
         <td />
         <td />
@@ -53,10 +62,14 @@ export const SummaryRows = () => {
         <td />
         <td />
         <td>
-          <b>{deposit} $</b>
+          <b>
+            <FormattedNumber value={deposit} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td>
-          <b>{round(actualPrice)} $</b>
+          <b>
+            <FormattedNumber value={actualPrice} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td>=</td>
         <td
@@ -65,7 +78,9 @@ export const SummaryRows = () => {
             [styles.red]: overallGain < 0
           })}
         >
-          <b>{round(overallGain)} $</b>
+          <b>
+            <FormattedNumber value={overallGain} minimumFractionDigits={2} style="currency" currency="USD" />
+          </b>
         </td>
         <td
           className={classNames({
@@ -73,7 +88,9 @@ export const SummaryRows = () => {
             [styles.red]: overallGain < 0
           })}
         >
-          <b>{round(overallPercentageGain)}%</b>
+          <b>
+            <FormattedNumber value={overallPercentageGain / 100} minimumFractionDigits={2} style="percent" />
+          </b>
         </td>
         <td />
         <td />

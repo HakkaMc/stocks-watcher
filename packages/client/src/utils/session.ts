@@ -12,7 +12,7 @@ type ResponseData = {
 
 export const refreshSession = () =>
   new Promise<void>((resolve, reject) => {
-    const refreshToken = window?.sessionStorage?.getItem('refreshToken')
+    const refreshToken = window?.localStorage?.getItem('refreshToken')
 
     if (refreshToken) {
       axiosInstance
@@ -21,8 +21,8 @@ export const refreshSession = () =>
         })
         .then(
           (response: AxiosResponse<ResponseData>) => {
-            window.sessionStorage.setItem('accessToken', response.data.accessToken)
-            window.sessionStorage.setItem('accessTokenExpiration', response.data.accessTokenExpiration.toString())
+            window.localStorage.setItem('accessToken', response.data.accessToken)
+            window.localStorage.setItem('accessTokenExpiration', response.data.accessTokenExpiration.toString())
             resolve()
           },
           (error: AxiosError) => {
@@ -42,9 +42,12 @@ export const refreshSession = () =>
   })
 
 const getDelay = () => {
-  const accessTokenExpiration = parseInt(window?.sessionStorage?.getItem('accessTokenExpiration') as string, 10)
+  const accessTokenExpiration = parseInt(window?.localStorage?.getItem('accessTokenExpiration') as string, 10)
 
-  return accessTokenExpiration - Date.now() - 5 * 60 * 1000
+  const delay = accessTokenExpiration - Date.now() - 5 * 60 * 1000
+
+  // TODO - debugging session refresh
+  return delay / 2
 }
 
 export const restartSessionTimer = () => {
@@ -70,9 +73,9 @@ export const restartSessionTimer = () => {
 export const stopSessionTimer = () => clearTimeout(timerRef)
 
 const clearStorage = () => {
-  window.sessionStorage.removeItem('accessToken')
-  window.sessionStorage.removeItem('refreshToken')
-  window.sessionStorage.removeItem('accessTokenExpiration')
+  window.localStorage.removeItem('accessToken')
+  window.localStorage.removeItem('refreshToken')
+  window.localStorage.removeItem('accessTokenExpiration')
 }
 
 export const logout = () => {

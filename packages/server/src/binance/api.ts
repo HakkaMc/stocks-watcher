@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 import crypto from 'crypto'
 import querystring from 'querystring'
+import { binanceHttpUrl } from '../constants'
 
-const baseUrl = 'https://api2.binance.com'
 const apiKey = process.env.binanceApiKey as string
 const apiSecret = process.env.binanceApiSecret as string
 
@@ -34,7 +34,7 @@ const getSignature = (params: Record<string, any>, noTimestamp?: boolean) => {
 export const binanceQuery = (config: AxiosRequestConfig, secured?: boolean): Promise<AxiosResponse> => {
   const enhancedConfig = { ...config }
 
-  enhancedConfig.url = `${baseUrl}${enhancedConfig.url}`
+  enhancedConfig.url = `${binanceHttpUrl}${enhancedConfig.url}`
 
   if (!enhancedConfig.params) {
     enhancedConfig.params = {}

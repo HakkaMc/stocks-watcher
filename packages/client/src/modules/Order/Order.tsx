@@ -1,20 +1,28 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, Typography } from '@material-ui/core'
 import { useQuery, useSubscription } from '@apollo/client'
-import { BinanceAccountInformation, BinanceLastPrice } from '@sw/shared/src/graphql'
 
-import { ModalTemplate } from '../../components'
+import { ErrorModal, ModalTemplate } from '../../components'
 import { Info } from './modules/Info/Info'
 
 import { BINANCE_LAST_PRICE_SUBSCRIPTION, GET_BINANCE_ACCOUNT_INFORMATION } from '../../gqls'
 
-import styles from './styles.module.scss'
-
+import {
+  BinanceLastPriceSubscription,
+  BinanceLastPriceSubscriptionVariables
+} from '../../types/graphql/generated/BinanceLastPriceSubscription'
+import { BinanceAccountInformation } from '../../types/graphql/generated/BinanceAccountInformation'
 import { BinanceFixedTrailingStop } from './modules/BinanceFixedTrailingStop/BinanceFixedTrailingStop'
 import { BinanceMovingBuy } from './modules/BinanceMovingBuy/BinanceMovingBuy'
 import { BinanceDirectBuy } from './modules/BinanceDirectBuy/BinanceDirectBuy'
 import { BinanceDirectSell } from './modules/BinanceDirectSell/BinanceDirectSell'
 import { OrderDialogType } from '../../constants'
+import { BinanceMovingTrailingStop } from './modules/BinanceMovingTrailingStop/BinanceMovingTrailingStop'
+import { dispatchers } from '../../redux'
+import { useModalLoader } from '../../hooks'
+import { BinanceConsolidation } from './modules/BinanceConsolidation/BinanceConsolidation'
+
+import styles from './styles.module.scss'
 
 type Props = {
   id: string
@@ -29,20 +37,42 @@ export const Order = ({
 }: Props) => {
   const [asset, setAsset] = useState(predefinedSymbol.replace('BUSD', ''))
   const [symbol, setSymbol] = useState(predefinedSymbol)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<any>()
 
-  const accountInformationResponse = useQuery<{ getBinanceAccountInformation: BinanceAccountInformation }>(
-    GET_BINANCE_ACCOUNT_INFORMATION,
+  const { showLoader, hideLoader } = useModalLoader()
+
+  const accountInformationResponse = useQuery<BinanceAccountInformation>(GET_BINANCE_ACCOUNT_INFORMATION, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true
+  })
+
+  const lastPriceResponse = useSubscription<BinanceLastPriceSubscription, BinanceLastPriceSubscriptionVariables>(
+    BINANCE_LAST_PRICE_SUBSCRIPTION,
     {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true
+      variables: {
+        symbol
+      }
     }
   )
 
-  const lastPriceResponse = useSubscription<{ binanceLastPrice: BinanceLastPrice }>(BINANCE_LAST_PRICE_SUBSCRIPTION, {
-    variables: {
-      symbol
-    }
+  useEffect(() => {
+    return hideLoader
   })
+
+  useEffect(() => {
+    if (loading) {
+      setFormSubmitted(true)
+      showLoader()
+    } else if (formSubmitted) {
+      hideLoader()
+
+      if (!error) {
+        dispatchers.modal.close(modalId)
+      }
+    }
+  }, [loading, formSubmitted])
 
   const setSymbolWrapper = useCallback((smb: string) => {
     setSymbol(smb)
@@ -84,22 +114,48 @@ export const Order = ({
     return 0
   }, [balances, asset])
 
-  const title = useMemo(() => {
+  const { title, FormElement } = useMemo(() => {
+    let tmpTitle = ''
+    let tmpFormElement: any = () => null
+
     switch (orderDialogType) {
       case OrderDialogType.BinanceDirectBuy:
-        return 'Binance Direct Buy Order'
+        tmpTitle = 'Binance Direct Buy Order'
+        tmpFormElement = BinanceDirectBuy
+        break
 
       case OrderDialogType.BinanceDirectSell:
-        return 'Binance Direct Sell Order'
+        tmpTitle = 'Binance Direct Sell Order'
+        tmpFormElement = BinanceDirectSell
+        break
 
       case OrderDialogType.BinanceMovingBuy:
-        return 'Binance Moving Buy Order'
+        tmpTitle = 'Binance Moving Buy Order'
+        tmpFormElement = BinanceMovingBuy
+        break
 
       case OrderDialogType.BinanceFixedTrailingStop:
-        return 'Binance Fixed trailing Stop Order'
+        tmpTitle = 'Binance Fixed Trailing Stop Order'
+        tmpFormElement = BinanceFixedTrailingStop
+        break
+
+      case OrderDialogType.BinanceMovingTrailingStop:
+        tmpTitle = 'Binance Moving Trailing Stop Order'
+        tmpFormElement = BinanceMovingTrailingStop
+        break
+
+      case OrderDialogType.BinanceConsolidation:
+        tmpTitle = 'Binance Consolidation'
+        tmpFormElement = BinanceConsolidation
+        break
 
       default:
-        return 'Order'
+        tmpTitle = 'Order'
+    }
+
+    return {
+      title: tmpTitle,
+      FormElement: tmpFormElement
     }
   }, [orderDialogType])
 
@@ -115,56 +171,20 @@ export const Order = ({
             />
           </Box>
           <Box className={styles.right}>
-            {() => {
-              switch (orderDialogType) {
-                case OrderDialogType.BinanceDirectSell:
-                  return (
-                    <BinanceDirectSell
-                      assetAmount={assetAmount}
-                      balances={balances}
-                      symbol={symbol}
-                      setSymbol={setSymbol}
-                      lastPrice={lastPriceResponse?.data?.binanceLastPrice}
-                    />
-                  )
-
-                case OrderDialogType.BinanceFixedTrailingStop:
-                  return (
-                    <BinanceFixedTrailingStop
-                      assetAmount={assetAmount}
-                      balances={balances}
-                      symbol={symbol}
-                      setSymbol={setSymbolWrapper}
-                      lastPrice={lastPriceResponse?.data?.binanceLastPrice}
-                    />
-                  )
-
-                case OrderDialogType.BinanceDirectBuy:
-                  return (
-                    <BinanceDirectBuy
-                      balances={balances}
-                      symbol={symbol}
-                      setSymbol={setSymbol}
-                      lastPrice={lastPriceResponse?.data?.binanceLastPrice}
-                    />
-                  )
-
-                case OrderDialogType.BinanceMovingBuy:
-                  return (
-                    <BinanceMovingBuy
-                      busdAmount={busdAmount}
-                      balances={balances}
-                      symbol={symbol}
-                      setSymbol={setSymbolWrapper}
-                      lastPrice={lastPriceResponse?.data?.binanceLastPrice}
-                    />
-                  )
-                default:
-                  return null
-              }
-            }}
+            <FormElement
+              assetAmount={assetAmount}
+              balances={balances}
+              busdAmount={busdAmount}
+              lastPrice={lastPriceResponse?.data?.binanceLastPrice}
+              modalId={modalId}
+              setError={setError}
+              setLoading={setLoading}
+              setSymbol={setSymbolWrapper}
+              symbol={symbol}
+            />
           </Box>
         </Box>
+        <ErrorModal error={error} />
       </ModalTemplate>
     </>
   )

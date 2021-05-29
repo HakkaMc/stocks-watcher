@@ -12,7 +12,7 @@ export const parseNumber = (price: any) => {
   }
 
   if (typeof price === 'string') {
-    const stringPrice = price.replace(/[^0-9]/g, '')
+    const stringPrice = price.replace(',', '.').replace(/[^0-9.]/g, '')
     if (stringPrice.length) {
       return parseFloat(stringPrice)
     }

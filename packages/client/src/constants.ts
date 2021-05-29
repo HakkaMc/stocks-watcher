@@ -6,14 +6,15 @@ export const LOGOUT_ENDPOINT = '/auth/logout'
 export const GRAPHQL_ENDPOINT = '/api/graphql'
 
 export enum ROUTES {
+  AuthFail = '/auth/fail',
+  AuthSuccess = '/auth/success',
   App = '/app',
   BinancePortfolio = '/app/binance-portfolio',
-  Orders = '/app/orders',
   Dashboard = '/app/dashboard',
   ChartGroups = '/app/chartgroups',
   ChartGroupView = '/chartgroup/:chartGroupId',
-  AuthFail = '/auth/fail',
-  AuthSuccess = '/auth/success'
+  Orders = '/app/orders',
+  Trades = '/app/trades'
 }
 
 export enum ModalPriority {
@@ -38,5 +39,7 @@ export enum OrderDialogType {
   BinanceDirectBuy,
   BinanceDirectSell,
   BinanceFixedTrailingStop,
-  BinanceMovingBuy
+  BinanceMovingTrailingStop,
+  BinanceMovingBuy,
+  BinanceConsolidation
 }

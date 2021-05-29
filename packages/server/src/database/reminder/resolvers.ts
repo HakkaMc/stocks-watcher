@@ -2,7 +2,7 @@ import { ResolverResolveParams } from 'graphql-compose'
 import { reminderGraphql, ReminderTsModel } from './schema'
 import { priceAlertGraphql, PriceAlertTsModel } from '../priceAlert/schema'
 import { getLastPrice } from '../../cache'
-import { modifiedReminderNotification } from '../../reminder'
+import { modifiedReminderNotification } from '../../computes/reminder'
 
 reminderGraphql.addResolver({
   kind: 'query',

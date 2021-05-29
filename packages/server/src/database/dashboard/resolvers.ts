@@ -59,9 +59,12 @@ dashboardGraphql.addResolver({
   resolve: async (params: ResolverResolveParams<any, any, any>) => {
     const userId = await getUserId(params.context.session)
 
-    const dashboard = await getDashboard(userId)
+    const watchlistExists = await DashboardTsModel.exists({
+      user: userId,
+      'watchlists.name': params.args.watchlist
+    })
 
-    if (!dashboard?.watchlists?.some((wl) => wl.name === params.args.watchlist)) {
+    if (!watchlistExists) {
       await DashboardTsModel.findOneAndUpdate(
         { user: userId },
         { $push: { watchlists: { name: params.args.watchlist, hidden: false } } }
@@ -70,7 +73,7 @@ dashboardGraphql.addResolver({
       return 'OK'
     }
 
-    return 'ERROR'
+    return new Error('Watchlist exists already.')
   }
 })
 
@@ -82,8 +85,20 @@ dashboardGraphql.addResolver({
     watchlist: 'String!'
   },
   type: 'String',
-  resolve: async (params: ResolverResolveParams<any, any, {symbol: string, watchlist: string}>) => {
+  resolve: async (params: ResolverResolveParams<any, any, { symbol: string; watchlist: string }>) => {
     const userId = await getUserId(params.context.session)
+
+    const watchlistExists = await DashboardTsModel.exists({
+      user: userId,
+      'watchlists.name': params.args.watchlist
+    })
+
+    if (!watchlistExists) {
+      await DashboardTsModel.findOneAndUpdate(
+        { user: userId },
+        { $push: { watchlists: { name: params.args.watchlist, hidden: false } } }
+      )
+    }
 
     const query: any = {
       user: userId,
@@ -93,9 +108,9 @@ dashboardGraphql.addResolver({
       }
     }
 
-    const exists = await DashboardTsModel.exists(query)
+    const symbolExists = await DashboardTsModel.exists(query)
 
-    if (!exists) {
+    if (!symbolExists) {
       await DashboardTsModel.findOneAndUpdate(
         { user: userId, 'watchlists.name': params.args.watchlist },
         {

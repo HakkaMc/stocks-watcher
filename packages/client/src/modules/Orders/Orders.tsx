@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 import { Box, IconButton, Typography } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 import { useQuery, useSubscription } from '@apollo/client'
-import { BinanceOcoOrderUpdate, BinanceOrder, BinanceOrderUpdate, Order } from '@sw/shared/src/graphql'
+import { BinanceOcoOrderUpdate, BinanceOrderUpdate } from '@sw/shared/src/graphql'
 
 import { RefreshIcon } from '../../utils/icons'
 import {
@@ -15,16 +15,18 @@ import { BinanceRow } from './modules/BinanceRow'
 import { Row } from './modules/Row'
 import { dispatchers } from '../../redux'
 import styles from './styles.module.scss'
+import { Orders as OrdersType } from '../../types/graphql/generated/Orders'
+import { BinanceOrders } from '../../types/graphql/generated/BinanceOrders'
 
 export const Orders = () => {
   const modalLoaderId = 'BINANCE_ORDERS'
 
-  const getBinanceOrdersResponse = useQuery<{ getBinanceOrders: Array<BinanceOrder> }>(GET_BINANCE_ORDERS, {
+  const getBinanceOrdersResponse = useQuery<BinanceOrders>(GET_BINANCE_ORDERS, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true
   })
 
-  const getOrdersResponse = useQuery<{ getOrders: Array<Order> }>(GET_ORDERS, {
+  const getOrdersResponse = useQuery<OrdersType>(GET_ORDERS, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true
   })
@@ -77,6 +79,16 @@ export const Orders = () => {
         <Typography variant="h5">Binance orders</Typography>
         <Box className={styles.tableWrapper}>
           <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Order type</th>
+                <th>Activate on</th>
+                <th>Quantity</th>
+                <th>Created</th>
+                <th>&nbsp;</th>
+              </tr>
+            </thead>
             <tbody>
               {(getBinanceOrdersResponse?.data?.getBinanceOrders || []).map((order) => (
                 <BinanceRow {...order} key={order.orderId} />
@@ -90,6 +102,18 @@ export const Orders = () => {
         <Typography variant="h5">Orders</Typography>
         <Box className={styles.tableWrapper}>
           <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Order type</th>
+                <th>Activate on</th>
+                <th>Sell on</th>
+                <th>&nbsp;</th>
+                <th>Quantity</th>
+                <th>Created</th>
+                <th>&nbsp;</th>
+              </tr>
+            </thead>
             <tbody>
               {(getOrdersResponse?.data?.getOrders || []).map((order) => (
                 <Row {...order} key={order._id} />
