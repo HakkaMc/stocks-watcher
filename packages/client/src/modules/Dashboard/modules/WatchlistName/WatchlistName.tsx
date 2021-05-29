@@ -1,19 +1,19 @@
 import React, { KeyboardEvent, useCallback, useState } from 'react'
 import { Box, Icon, IconButton, Tooltip } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
-import { DashboardWatchlists } from '@sw/shared/src/graphql'
 import { useForm } from 'react-hook-form'
 import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
 
 import { Input } from '../../../../form'
 import { CHANGE_WATCHLIST_SETTINGS, GET_DASHBOARD } from '../../../../gqls'
+import { Dashboard_getDashboard_watchlists } from '../../../../types/graphql/generated/Dashboard'
 
 type FormValues = {
   name: string
 }
 
 type Props = {
-  watchlist: DashboardWatchlists
+  watchlist: Dashboard_getDashboard_watchlists
 }
 
 export const WatchlistName = ({ watchlist }: Props) => {

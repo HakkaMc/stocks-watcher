@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { Box, List, ListItem, ListItemText } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
-import { DashboardWatchlists } from '@sw/shared/src/graphql'
 import styles from './styles.module.scss'
 
 import { SearchSymbolInput } from '../../../../components/SearchSymbolInput/SearchSymbolInput'
 import { GET_DASHBOARD, SAVE_SYMBOL_TO_DASHBOARD } from '../../../../gqls'
+import { Dashboard_getDashboard_watchlists } from '../../../../types/graphql/generated/Dashboard'
 
 type Props = {
-  watchlists: Array<DashboardWatchlists>
+  watchlists: Array<Dashboard_getDashboard_watchlists>
 }
 
 export const Search = ({ watchlists }: Props) => {

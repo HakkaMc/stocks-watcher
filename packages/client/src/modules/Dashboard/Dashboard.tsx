@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
-import { Dashboard as DashboardType, DashboardWatchlists, Symbol as SymbolType } from '@sw/shared/src/graphql'
+import { Symbol as SymbolType } from '@sw/shared/src/graphql'
 import { GET_DASHBOARD } from '../../gqls'
 
 import styles from './styles.module.scss'
@@ -8,10 +8,12 @@ import styles from './styles.module.scss'
 import { Watchlist } from './modules/Watchlist/Watchlist'
 import { Search } from './modules/Search/Search'
 
-export const Dashboard = () => {
-  const { data, loading, error } = useQuery<{ getDashboard: DashboardType }>(GET_DASHBOARD)
+import { Dashboard_getDashboard_watchlists, Dashboard as DashboardType } from '../../types/graphql/generated/Dashboard'
 
-  const watchlists = useMemo((): Array<DashboardWatchlists> => {
+export const Dashboard = () => {
+  const { data, loading, error } = useQuery<DashboardType>(GET_DASHBOARD)
+
+  const watchlists = useMemo((): Array<Dashboard_getDashboard_watchlists> => {
     if (data?.getDashboard?.watchlists?.length) {
       return data.getDashboard.watchlists.slice().sort((a, b) => {
         if (a && b) {
@@ -19,7 +21,7 @@ export const Dashboard = () => {
         }
 
         return 0
-      }) as Array<DashboardWatchlists>
+      }) as Array<Dashboard_getDashboard_watchlists>
     }
 
     return []

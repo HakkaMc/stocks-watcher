@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const GET_DASHBOARD = gql`
-  query getDashboard {
+  query Dashboard {
     getDashboard {
       watchlists {
         _id

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Button, Checkbox, IconButton, Box } from '@material-ui/core'
 import { Save as SaveIcon } from '@material-ui/icons'
 import { useSubscription, useMutation, useQuery } from '@apollo/client'
-import { Symbol as SymbolType, Dashboard } from '@sw/shared/src/graphql'
+import { Symbol as SymbolType } from '@sw/shared/src/graphql'
 import PlaylistAddCheckIcon from '@material-ui/icons/PlaylistAddCheck'
 import { grey } from '@material-ui/core/colors'
 import { SkullCrossbonesOutline as SkullIcon } from 'mdi-material-ui'
@@ -16,6 +16,7 @@ import {
   CHANGE_SYMBOL_WATCHLIST,
   CREATE_WATCHLIST
 } from '../../../../gqls'
+import { Dashboard } from '../../../../types/graphql/generated/Dashboard'
 
 type FormValues = {
   newWatchlist: string
@@ -51,7 +52,7 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
     ]
   })
 
-  const { data, loading, error } = useQuery<{ getDashboard: Dashboard }>(GET_DASHBOARD)
+  const { data, loading, error } = useQuery<Dashboard>(GET_DASHBOARD)
 
   const containerRef = useRef(null)
   const [show, setShow] = useState(false)

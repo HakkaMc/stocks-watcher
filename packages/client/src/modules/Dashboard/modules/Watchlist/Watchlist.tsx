@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { DashboardWatchlists } from '@sw/shared/src/graphql'
 import { grey } from '@material-ui/core/colors'
 import { Box, IconButton } from '@material-ui/core'
 import classNames from 'classnames'
@@ -10,9 +9,10 @@ import { WatchlistName } from '../WatchlistName/WatchlistName'
 
 import styles from './styles.module.scss'
 import { CHANGE_WATCHLIST_SETTINGS, GET_DASHBOARD } from '../../../../gqls'
+import { Dashboard_getDashboard_watchlists } from '../../../../types/graphql/generated/Dashboard'
 
 type Props = {
-  watchlist: DashboardWatchlists
+  watchlist: Dashboard_getDashboard_watchlists
 }
 
 export const Watchlist = ({ watchlist }: Props) => {
