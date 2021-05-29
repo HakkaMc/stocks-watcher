@@ -15,6 +15,14 @@ type Query {
   getNote: Note
   getPriceAlerts(symbol: String!): [PriceAlert]
   getReminders: [Reminder]
+  setBinanceSellOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): BinanceNewOrderResponseFull
+  setBinanceBuyOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): BinanceNewOrderResponseFull
+  getBinanceAccountInformation: BinanceAccountInformation
+  getBinanceTrades(symbol: String!): [BinanceTrade!]!
+  getBinanceExchangeInformation: [BinanceExchangeInformation!]!
+  getBinanceOrders: [BinanceOrder!]!
+  cancelBinanceOrder(symbol: String!, orderId: Int, origClientOrderId: String): [CancelBinanceOrder!]!
+  getOrders: [Order]!
 }
 
 type Symbol {
@@ -219,6 +227,146 @@ type Reminder {
   createdAt: Date
 }
 
+type BinanceNewOrderResponseFull {
+  symbol: String!
+  orderId: Int!
+  orderListId: Int!
+  clientOrderId: String!
+  transactTime: Float!
+  price: String!
+  origQty: String!
+  executedQty: String!
+  cummulativeQuoteQty: String!
+  status: String!
+  timeInForce: String!
+  type: String!
+  side: String!
+  fills: [BinanceFill!]!
+}
+
+type BinanceFill {
+  price: Float!
+  qty: Float!
+  commission: Float!
+  commissionAsset: String!
+}
+
+type BinanceAccountInformation {
+  makerCommission: Float!
+  takerCommission: Float!
+  buyerCommission: Float!
+  sellerCommission: Float!
+  canTrade: Boolean!
+  canWithdraw: Boolean!
+  canDeposit: Boolean!
+  updateTime: Float!
+  accountType: String!
+  balances: [BinanceBalance!]!
+  permissions: [String!]!
+}
+
+type BinanceBalance {
+  asset: String!
+  free: Float!
+  locked: Float!
+}
+
+type BinanceTrade {
+  id: Float!
+  orderId: Float!
+  symbol: String!
+  isBuyer: Boolean!
+  price: Float!
+  qty: Float!
+  quoteQty: Float!
+  time: Float!
+  commission: Float!
+  commissionAsset: String!
+}
+
+type BinanceExchangeInformation {
+  symbol: String!
+  baseAsset: String!
+  quoteAsset: String!
+  filters: JSON!
+  ocoAllowed: Boolean!
+}
+
+type BinanceOrder {
+  symbol: String!
+  orderId: Float!
+  orderListId: Float!
+  clientOrderId: String!
+  price: Float!
+  origQty: Float!
+  executedQty: Float!
+  cummulativeQuoteQty: Float!
+  status: String!
+  timeInForce: String!
+  type: String!
+  side: String!
+  stopPrice: Float!
+  icebergQty: Float!
+  time: Float!
+  updateTime: Float!
+  isWorking: Boolean!
+  origQuoteOrderQty: Float!
+}
+
+type CancelBinanceOrder {
+  symbol: String!
+  origClientOrderId: String!
+  orderId: Int!
+  orderListId: Int!
+  clientOrderId: String!
+  price: Float!
+  origQty: Float!
+  executedQty: Float!
+  cummulativeQuoteQty: Float!
+  status: String!
+  timeInForce: String!
+  type: String!
+  side: String!
+}
+
+type Order {
+  active: Boolean!
+  user: MongoID
+  type: String!
+  symbol: String!
+  exchange: String!
+  fixedTrailingStop: OrderFixedTrailingStop
+  movingBuy: OrderMovingBuy
+  percentageTrailingStop: OrderPercentageTrailingStop
+  _id: MongoID!
+  updatedAt: Date
+  createdAt: Date
+}
+
+type OrderFixedTrailingStop {
+  activateOnPrice: Float!
+  sellOnPrice: Float!
+  priceType: String!
+  quantityType: String!
+  quantity: Float!
+  quoteOrderQty: Float!
+  activatedTimestamp: Float!
+}
+
+type OrderMovingBuy {
+  activateOnPrice: Float!
+  percent: Float!
+  priceType: String!
+  quantityType: String!
+  quantity: Float!
+  quoteOrderQty: Float!
+}
+
+type OrderPercentageTrailingStop {
+  activateOnPrice: Float!
+  percentageDecrease: Float!
+}
+
 type Mutation {
   saveSymbolToDashboard(symbol: String!, watchlist: String!): String
   changeSymbolWatchlist(symbol: String!, watchlist: String, add: Boolean!): String
@@ -234,10 +382,17 @@ type Mutation {
   removePriceAlert(id: String!): String
   setReminder(title: String!, text: String, timestamp: Float!): String
   removeReminder(id: String!): String
+  cancelOrder(orderId: String!): String!
+  setTrailingStopOrder(symbol: String!, activateOnPrice: Float!, sellOnPrice: Float!, priceType: String!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
+  setMovingBuyOrder(symbol: String!, activateOnPrice: Float!, percent: Float!, priceType: String!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
 }
 
 type Subscription {
   lastPrice(symbol: String): LastPrice
+  binanceLastPrice(symbol: String): BinanceLastPrice
+  binanceBalanceUpdate: BinanceBalanceUpdate
+  binanceOrderUpdate: BinanceOrderUpdate
+  binanceOcoOrderUpdate: BinanceOcoOrderUpdate
 }
 
 type LastPrice {
@@ -245,4 +400,35 @@ type LastPrice {
   price: Float!
   timestamp: Float!
   volume: Float!
+}
+
+type BinanceLastPrice {
+  symbol: String!
+  ask: Float!
+  bid: Float!
+  middle: Float!
+  diff: Float!
+  diffPercentage: Float!
+  timestamp: Float!
+}
+
+type BinanceBalanceUpdate {
+  asset: String!
+  delta: Float!
+  eventTime: Int!
+  clearTime: Int!
+}
+
+type BinanceOrderUpdate {
+  symbol: String!
+  eventTime: Int!
+  side: String!
+  orderId: Int!
+  transactionTime: Int!
+}
+
+type BinanceOcoOrderUpdate {
+  symbol: String!
+  eventTime: Int!
+  transactionTime: Int!
 }

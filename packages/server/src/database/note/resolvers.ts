@@ -11,20 +11,19 @@ noteGraphql.addResolver({
     const note = await NoteTsModel.findOne({ user: userId })
 
     if (note) {
-        console.log('return note')
+      console.log('return note')
       return note
-    } else {
-      const newNote = new NoteTsModel({
-        text: '',
-        user: userId
-      })
-
-      await newNote.save()
-
-        console.log('saved new note')
-
-      return newNote
     }
+    const newNote = new NoteTsModel({
+      text: '',
+      user: userId
+    })
+
+    await newNote.save()
+
+    console.log('saved new note')
+
+    return newNote
   }
 })
 

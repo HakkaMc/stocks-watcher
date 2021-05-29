@@ -15,6 +15,7 @@ type Props = {
 export const Search = ({ watchlists }: Props) => {
   const [symbol, setSymbol] = useState('')
   const [saveSymbolToDashboard] = useMutation(SAVE_SYMBOL_TO_DASHBOARD, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_DASHBOARD
@@ -65,7 +66,7 @@ export const Search = ({ watchlists }: Props) => {
     )
   }, [watchlists, save])
 
-  const listContainerClick = useCallback((event)=>{
+  const listContainerClick = useCallback((event) => {
     event.preventDefault()
     event.stopPropagation()
   }, [])

@@ -10,11 +10,13 @@ import { chartGroupResolvers } from './chartGroup/resolvers'
 import { noteResolvers } from './note/resolvers'
 import { priceAlertResolvers } from './priceAlert/resolvers'
 import { reminderResolvers } from './reminder/resolvers'
+import { binanceResolvers } from '../binance/resolvers'
+import { orderResolvers } from './order/resolvers'
 
 export const initDatabase = async () => {
   console.log('initDatabase')
 
-  await mongoose.connect('mongodb://localhost:27017/stocksWatcher', {
+  await mongoose.connect(`mongodb://localhost:${process.env.dbPort}/${process.env.db}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false,
@@ -28,7 +30,9 @@ export const initDatabase = async () => {
     ...chartGroupResolvers.query,
     ...noteResolvers.query,
     ...priceAlertResolvers.query,
-    ...reminderResolvers.query
+    ...reminderResolvers.query,
+    ...binanceResolvers.query,
+    ...orderResolvers.query
   })
 
   schemaComposer.Mutation.addFields({
@@ -36,12 +40,14 @@ export const initDatabase = async () => {
     ...chartGroupResolvers.mutation,
     ...noteResolvers.mutation,
     ...priceAlertResolvers.mutation,
-    ...reminderResolvers.mutation
+    ...reminderResolvers.mutation,
+    ...orderResolvers.mutation
   })
 
   // @ts-ignore
   schemaComposer.Subscription.addFields({
-    ...finnhubResolvers.subscription
+    ...finnhubResolvers.subscription,
+    ...binanceResolvers.subscription
   })
 
   const graphqlSchema = schemaComposer.buildSchema()

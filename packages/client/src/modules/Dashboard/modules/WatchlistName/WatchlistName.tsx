@@ -1,4 +1,4 @@
-import React, {KeyboardEvent, useCallback, useState} from 'react'
+import React, { KeyboardEvent, useCallback, useState } from 'react'
 import { Box, Icon, IconButton, Tooltip } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 import { DashboardWatchlists } from '@sw/shared/src/graphql'
@@ -20,6 +20,7 @@ export const WatchlistName = ({ watchlist }: Props) => {
   const [editMode, setEditMode] = useState(false)
 
   const [changeWatchlistSettings] = useMutation(CHANGE_WATCHLIST_SETTINGS, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_DASHBOARD
@@ -36,7 +37,7 @@ export const WatchlistName = ({ watchlist }: Props) => {
   const submit = useCallback(() => {
     const values = form.getValues()
 
-    if(values.name) {
+    if (values.name) {
       changeWatchlistSettings({
         variables: {
           id: watchlist._id,
@@ -48,20 +49,25 @@ export const WatchlistName = ({ watchlist }: Props) => {
     }
   }, [watchlist._id, form])
 
-  const onKeyUp = useCallback((event: KeyboardEvent<HTMLInputElement>)=>{
-    if (event.key === 'Escape') {
-      form.reset()
-      setEditMode(false)
-    }
-    else if(event.key === 'Enter'){
-      // Run in new thread otherwise an error occur
-      setTimeout(submit, 0)
-    }
-  }, [setEditMode])
+  const onKeyUp = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Escape') {
+        form.reset()
+        setEditMode(false)
+      } else if (event.key === 'Enter') {
+        // Run in new thread otherwise an error occur
+        setTimeout(submit, 0)
+      }
+    },
+    [setEditMode]
+  )
 
-  const onNameClick = useCallback((value)=>{
-    setEditMode(value)
-  }, [setEditMode])
+  const onNameClick = useCallback(
+    (value) => {
+      setEditMode(value)
+    },
+    [setEditMode]
+  )
 
   return (
     <>

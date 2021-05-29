@@ -23,9 +23,9 @@ api_key.apiKey = token
 
 const finnhubClient = new finnhub.DefaultApi()
 
-const getCryptoSymbols = (): Promise<Array<SymbolTsType>> =>
+const getCryptoSymbols = (exchange: string): Promise<Array<SymbolTsType>> =>
   new Promise((resolve, reject) => {
-    finnhubClient.cryptoSymbols('COINBASE', (error, data, response) => {
+    finnhubClient.cryptoSymbols(exchange, (error, data, response) => {
       if (error) {
         console.error(error)
         resolve([])
@@ -71,9 +71,12 @@ export const getSymbols = () =>
       // })
 
       const stockSymbols = await getStockSymbols()
-      const cryptoSymbols = await getCryptoSymbols()
+      const coinbaseSymbols = await getCryptoSymbols('COINBASE')
+      const binanceSymbols = await getCryptoSymbols('BINANCE')
 
-      resolve([...stockSymbols, ...cryptoSymbols])
+      // console.log('binance symbols: ', binanceSymbols)
+
+      resolve([...stockSymbols, ...coinbaseSymbols, ...binanceSymbols])
     } else {
       resolve(cachedSymbols.symbols)
     }
@@ -160,17 +163,16 @@ export const getQuote = (symbol: string): Promise<GetQuote | undefined> =>
         tryCounter += 1
 
         if (error) {
-          if(error.status === 429 && tryCounter < 20){
+          if (error.status === 429 && tryCounter < 20) {
             setTimeout(fnc, 5000)
-          }
-          else {
+          } else {
             console.error(error)
             resolve(undefined)
           }
         } else if (!data) {
           resolve(undefined)
         } else {
-          console.log('getQuote: ', symbol, data)
+          // console.log('getQuote: ', symbol, data)
 
           resolve({
             currentPrice: data.c,
@@ -209,10 +211,9 @@ export const getStockPrices = (
         tryCounter += 1
 
         if (error) {
-          if(error.status === 429 && tryCounter < 20){
+          if (error.status === 429 && tryCounter < 20) {
             setTimeout(fnc, 5000)
-          }
-          else {
+          } else {
             console.error(error)
             resolve(undefined)
           }

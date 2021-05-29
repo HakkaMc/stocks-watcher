@@ -60,6 +60,6 @@ module.exports = {
     '@typescript-eslint/ban-ts-comment': 'off',
     'import/no-webpack-loader-syntax': 'off',
     'global-require': 'off',
-    'radix': 'off'
+    radix: 'off'
   }
 }

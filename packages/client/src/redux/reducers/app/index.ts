@@ -3,7 +3,7 @@ import { App } from '../../../types/redux/app'
 
 const initialState: App = {
   appReady: false,
-  showNotes: false,
+  showNotes: false
 }
 
 export const app = createSlice({

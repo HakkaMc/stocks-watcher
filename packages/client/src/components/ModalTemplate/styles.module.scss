@@ -1,0 +1,39 @@
+.margin {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  height: 100%;
+
+  .paper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+
+    .header {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+
+      & > *{
+        &:first-child{
+          flex: 1 1 auto;
+        }
+
+        &:last-child{
+          flex: 0 0 auto;
+        }
+      }
+    }
+
+    .body {
+      display: flex;
+      flex: 1 1 auto;
+      overflow: auto;
+      width: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  }
+}

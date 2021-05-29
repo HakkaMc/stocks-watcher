@@ -27,6 +27,7 @@ type Props = {
 
 export const WatchlistChanger = ({ symbolObj }: Props) => {
   const [changeSymbolFlag] = useMutation(CHANGE_SYMBOL_WATCHLIST, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_DASHBOARD
@@ -42,6 +43,7 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
   // })
 
   const [removeSymbol] = useMutation(REMOVE_SYMBOL_FROM_DASHBOARD, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_DASHBOARD
@@ -51,7 +53,7 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
 
   const { data, loading, error } = useQuery<{ getDashboard: Dashboard }>(GET_DASHBOARD)
 
-  const containerRef = useRef(null);
+  const containerRef = useRef(null)
   const [show, setShow] = useState(false)
   const form = useForm<FormValues>()
 
@@ -65,7 +67,6 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
         }
       })
     }
-
 
     return set
   }, [data, symbolObj])
@@ -87,16 +88,15 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
     setShow(!show)
   }, [show])
 
-  const hide = useCallback(()=>{
+  const hide = useCallback(() => {
     setShow(false)
   }, [setShow])
 
-  useEffect(()=>{
-    if(show){
-      window.addEventListener("mousedown", hide)
-    }
-    else{
-      window.removeEventListener("mousedown", hide)
+  useEffect(() => {
+    if (show) {
+      window.addEventListener('mousedown', hide)
+    } else {
+      window.removeEventListener('mousedown', hide)
     }
   }, [show, hide])
 
@@ -124,9 +124,9 @@ export const WatchlistChanger = ({ symbolObj }: Props) => {
 
   const isChecked = useCallback((watchlistId: string) => usedWatchlists.has(watchlistId), [usedWatchlists])
 
-  const containerClick = useCallback((event)=>{
+  const containerClick = useCallback((event) => {
     event.stopPropagation()
-  },[])
+  }, [])
 
   return (
     <div className={styles.flags}>

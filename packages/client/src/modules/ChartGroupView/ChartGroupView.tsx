@@ -24,12 +24,14 @@ export const ChartGroupView = () => {
   const [layout, setLayout] = useState<LAYOUT>(LAYOUT.VERTICAL)
 
   const chartGroupResponse = useQuery<{ getChartGroup: ChartGroup }>(GET_CHART_GROUP, {
+    fetchPolicy: 'network-only',
     variables: {
       chartGroupId: urlParams.chartGroupId
     }
   })
 
   const [addChartToChartGroup, addChartToChartGroupResponse] = useMutation(ADD_CHART_TO_CHART_GROUP, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_CHART_GROUP,
@@ -41,6 +43,7 @@ export const ChartGroupView = () => {
   })
 
   const [removeChartFromChartGroup, removeChartFromChartGroupResponse] = useMutation(REMOVE_CHART_FROM_CHART_GROUP, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_CHART_GROUP,

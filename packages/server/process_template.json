@@ -1,0 +1,19 @@
+{
+  "apps": [{
+    "name": "stocks-watcher",
+    "script": "ts-node -T ./src/index.ts",
+    "watch": true,
+    "env": {
+      "db": "stocksWatcherDev",
+      "dbPort": 27017,
+      "port": "5000",
+      "NODE_ENV": "development"
+    },
+    "env_production": {
+      "db": "stocksWatcherProd",
+      "dbPort": 27017,
+      "port": 5001,
+      "NODE_ENV": "production"
+    }
+  }]
+}

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import HighchartsStock from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
 import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
@@ -18,13 +18,13 @@ export const BigChart = ({ symbol }: Props) => {
   const [chart, setChart] = useState<any>()
   const [initDataSet, setInitDataSet] = useState(false)
   const [loadData, { data, loading, error }] = useLazyQuery<{ getPrices: GetPrices }>(GET_PRICES, {
-    fetchPolicy: 'no-cache'
+    fetchPolicy: 'network-only'
   })
   const lastPriceResponse = useSubscription<{
     lastPrice: LastPrice
   }>(LAST_PRICE_SUBSCRIPTION, { variables: { symbol } })
 
-  const loadChartData = useCallback(()=>{
+  const loadChartData = useCallback(() => {
     // const dayPoints = getDayPoints()
     //
     // const tmpFrom = dayPoints.midnightToday
@@ -46,12 +46,15 @@ export const BigChart = ({ symbol }: Props) => {
 
     loadData({
       variables: {
-        symbol, range: '5', timestampFrom: tmpTFrom.getTime(), timestampTo: tmpTto.getTime()
+        symbol,
+        range: '5',
+        timestampFrom: tmpTFrom.getTime(),
+        timestampTo: tmpTto.getTime()
       }
     })
   }, [loadData, symbol])
 
-  useEffect(()=>{
+  useEffect(() => {
     const tmpTto = new Date()
     tmpTto.setDate(tmpTto.getDate() + 1)
     tmpTto.setHours(0)
@@ -304,11 +307,11 @@ export const BigChart = ({ symbol }: Props) => {
 
       let updated = false
 
-      const rawData = chart.series[0]?.options?.data||[]
+      const rawData = chart.series[0]?.options?.data || []
 
-      if(Array.isArray(rawData) && rawData.length) {
-        const lastPoint = rawData[rawData.length-1]
-        if(lastPoint[0]===timestamp){
+      if (Array.isArray(rawData) && rawData.length) {
+        const lastPoint = rawData[rawData.length - 1]
+        if (lastPoint[0] === timestamp) {
           lastPoint[1] = lastPriceResponse.data?.lastPrice.price
           updated = true
         }
@@ -319,7 +322,7 @@ export const BigChart = ({ symbol }: Props) => {
         updated = true
       }
 
-      if(updated){
+      if (updated) {
         chart.series[0].setData([...rawData], true, false, true)
       }
     }

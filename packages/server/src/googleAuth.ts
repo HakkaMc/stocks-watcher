@@ -24,7 +24,7 @@ type RefreshedToken = {
 
 class MyOauthClient extends google.auth.OAuth2 {
   constructor() {
-    super(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, 'http://localhost:5000/auth/google/callback')
+    super(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `http://localhost:${process.env.port}/auth/google/callback`)
   }
 
   getGoogleAuthURL = () => {

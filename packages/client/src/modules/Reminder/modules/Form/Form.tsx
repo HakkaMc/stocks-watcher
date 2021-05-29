@@ -22,6 +22,7 @@ export const Form = ({ onClose }: Props) => {
   const form = useForm<FormValues>()
 
   const [saveReminder] = useMutation(SET_REMINDER, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_REMINDERS

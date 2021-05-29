@@ -3,17 +3,17 @@ export const REFRESH_AUTH_ENDPOINT = '/auth/refresh'
 export const LOGIN_ENDPOINT = '/auth/google/login'
 export const LOGOUT_ENDPOINT = '/auth/logout'
 
-// export const GRAPHQL_ENDPOINT = 'ws://localhost:5000/graphql'
-// export const GRAPHQL_ENDPOINT = 'wss://localhost:4001/api/graphql'
 export const GRAPHQL_ENDPOINT = '/api/graphql'
 
 export enum ROUTES {
-  APP = '/app',
-  DASHBOARD = '/app/dashboard',
-  CHART_GROUPS = '/app/chartgroups',
-  CHART_GROUP_VIEW = '/chartgroup/:chartGroupId',
-  AUTH_FAIL = '/auth/fail',
-  AUTH_SUCCESS = '/auth/success'
+  App = '/app',
+  BinancePortfolio = '/app/binance-portfolio',
+  Orders = '/app/orders',
+  Dashboard = '/app/dashboard',
+  ChartGroups = '/app/chartgroups',
+  ChartGroupView = '/chartgroup/:chartGroupId',
+  AuthFail = '/auth/fail',
+  AuthSuccess = '/auth/success'
 }
 
 export enum ModalPriority {
@@ -25,5 +25,18 @@ export enum ModalPriority {
 
 export enum ModalRoutes {
   Note,
-  Reminder
+  Reminder,
+  BinanceOrder,
+  BinanceBuyOrder,
+  BinanceSellOrder,
+  BinanceTrailingStopOrder,
+  BinanceMovingBuyOrder,
+  Order
+}
+
+export enum OrderDialogType {
+  BinanceDirectBuy,
+  BinanceDirectSell,
+  BinanceFixedTrailingStop,
+  BinanceMovingBuy
 }

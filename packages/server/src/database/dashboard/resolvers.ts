@@ -29,12 +29,11 @@ const getUserId = async (session: any) => {
   if (userId) {
     await getDashboard(userId)
     return userId
-  } else {
-    // TODO - remove
-    const user = await UserTsModel.findOne({ name: 'admin' })
-    await getDashboard(user?._id)
-    return user?._id
   }
+  // TODO - remove
+  const user = await UserTsModel.findOne({ name: 'admin' })
+  await getDashboard(user?._id)
+  return user?._id
 }
 
 dashboardGraphql.addResolver({
@@ -83,16 +82,18 @@ dashboardGraphql.addResolver({
     watchlist: 'String!'
   },
   type: 'String',
-  resolve: async (params: ResolverResolveParams<any, any, any>) => {
+  resolve: async (params: ResolverResolveParams<any, any, {symbol: string, watchlist: string}>) => {
     const userId = await getUserId(params.context.session)
 
-    const exists = await DashboardTsModel.exists({
+    const query: any = {
       user: userId,
       watchlists: {
         name: params.args.watchlist,
         symbols: params.args.symbol
       }
-    })
+    }
+
+    const exists = await DashboardTsModel.exists(query)
 
     if (!exists) {
       await DashboardTsModel.findOneAndUpdate(
@@ -169,18 +170,17 @@ dashboardGraphql.addResolver({
       }
 
       return 'NOTHING'
-    } else {
-      await DashboardTsModel.findOneAndUpdate(
-        { user: userId, 'watchlists.name': params.args.watchlist },
-        {
-          $pull: {
-            'watchlists.$.symbols': params.args.symbol
-          }
-        }
-      )
-
-      return 'REMOVED'
     }
+    await DashboardTsModel.findOneAndUpdate(
+      { user: userId, 'watchlists.name': params.args.watchlist },
+      {
+        $pull: {
+          'watchlists.$.symbols': params.args.symbol
+        }
+      }
+    )
+
+    return 'REMOVED'
 
     return 'ERROR'
   }
@@ -217,14 +217,14 @@ dashboardGraphql.addResolver({
     }
 
     if (exists && Object.keys(attributesToChange).length) {
-      const fields:any = {}
-      Object.entries(attributesToChange).forEach(([attribute, value])=>{
+      const fields: any = {}
+      Object.entries(attributesToChange).forEach(([attribute, value]) => {
         fields[`watchlists.$.${attribute}`] = value
       })
 
       await DashboardTsModel.updateOne(
         { user: userId, 'watchlists._id': mongoose.Types.ObjectId(params.args.id) },
-        { $set: fields}
+        { $set: fields }
       )
 
       return 'OK'

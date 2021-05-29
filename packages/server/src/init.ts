@@ -15,7 +15,7 @@ export const initSymbols = async () => {
     const promiseArray: Array<any> = []
 
     symbols.forEach((symbolObj) => {
-      promiseArray.push(SymbolTsModel.replaceOne({ symbol: symbolObj.symbol }, symbolObj, { upsert: true }))
+      promiseArray.push(SymbolTsModel.replaceOne({ symbol: symbolObj.symbol }, symbolObj as any, { upsert: true }))
     })
 
     Promise.all(promiseArray).then(async () => {

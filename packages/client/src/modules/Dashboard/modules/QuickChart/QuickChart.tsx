@@ -52,7 +52,7 @@ aftermarketStopTime.setHours(1)
 aftermarketStopTime.setMinutes(45)
 
 const nextAftermarketStopTime = new Date(aftermarketStopTime)
-nextAftermarketStopTime.setDate(nextAftermarketStopTime.getDate()+1)
+nextAftermarketStopTime.setDate(nextAftermarketStopTime.getDate() + 1)
 
 const premarketStartTime = new Date(midnight)
 premarketStartTime.setHours(10)
@@ -126,8 +126,8 @@ const options = {
     type: 'datetime',
     visible: true,
     // range: 24 * 60 * 60 * 1000,
-    min: stockPreviousEndTime.getTime()-1*60*60*1000,
-    max: nextAftermarketStopTime.getTime()+1*60*60*1000,
+    min: stockPreviousEndTime.getTime() - 1 * 60 * 60 * 1000,
+    max: nextAftermarketStopTime.getTime() + 1 * 60 * 60 * 1000,
     plotLines: [
       {
         value: midnight.getTime(),
@@ -185,7 +185,7 @@ const options = {
         width: 1,
         zIndex: 1
       }
-    ],
+    ]
     // breaks: [{
     //   from: aftermarketStopTime,
     //   to: premarketStartTime,
@@ -239,11 +239,11 @@ export const QuickChart = ({
 
       let updated = false
 
-      const rawData = chart.series[0]?.options?.data||[]
+      const rawData = chart.series[0]?.options?.data || []
 
-      if(Array.isArray(rawData) && rawData.length) {
-        const lastPoint = rawData[rawData.length-1]
-        if(lastPoint[0]===timestamp){
+      if (Array.isArray(rawData) && rawData.length) {
+        const lastPoint = rawData[rawData.length - 1]
+        if (lastPoint[0] === timestamp) {
           lastPoint[1] = lastPrice
           updated = true
         }
@@ -254,7 +254,7 @@ export const QuickChart = ({
         updated = true
       }
 
-      if(updated){
+      if (updated) {
         chart.series[0].setData([...rawData], true, false, true)
       }
     }

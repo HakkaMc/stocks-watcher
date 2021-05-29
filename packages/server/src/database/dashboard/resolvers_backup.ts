@@ -78,10 +78,9 @@ dashboardGraphql.addResolver({
       })
 
       await dashboard.save()
-    }
-    else if(dashboard){
-      const watchedSymbol = dashboard.watchedSymbols?.find(ws=>ws.symbol===params.args.symbol)
-      if(watchedSymbol){
+    } else if (dashboard) {
+      const watchedSymbol = dashboard.watchedSymbols?.find((ws) => ws.symbol === params.args.symbol)
+      if (watchedSymbol) {
         watchedSymbol.flags?.push(flagId)
         await dashboard.save()
       }
@@ -148,13 +147,11 @@ dashboardGraphql.addResolver({
         const index = watchedSymbol.flags?.indexOf(flag._id)
         if (index !== undefined && index >= 0) {
           watchedSymbol.flags?.splice(index, 1)
+        } else {
+          return 'ERROR'
         }
-        else{
-          return "ERROR"
-        }
-      }
-      else{
-        return "ERROR"
+      } else {
+        return 'ERROR'
       }
 
       await dashboard.save()
@@ -162,7 +159,7 @@ dashboardGraphql.addResolver({
       return 'DONE'
     }
 
-    return "ERROR"
+    return 'ERROR'
   }
 })
 

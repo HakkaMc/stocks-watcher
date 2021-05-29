@@ -15,6 +15,7 @@ type Props = {
 
 export const Item = ({ data }: Props) => {
   const [removeReminder] = useMutation(REMOVE_REMINDER, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_REMINDERS
@@ -30,7 +31,7 @@ export const Item = ({ data }: Props) => {
       <Box className={styles.rest}>
         <div>
           <FormattedDate value={new Date(data.timestamp)} day="2-digit" month="2-digit" year="numeric" />{' '}
-          <FormattedTime value={new Date(data.timestamp)}/>
+          <FormattedTime value={new Date(data.timestamp)} />
         </div>
         <IconButton>
           <CloseIcon />

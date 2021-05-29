@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios'
 import { axiosInstance } from '../api/axios'
 import { LOGOUT_ENDPOINT, REFRESH_AUTH_ENDPOINT } from '../constants'
-import {store, actions} from "../redux";
+import { store, actions } from '../redux'
 
 let timerRef: ReturnType<typeof setTimeout>
 
@@ -30,7 +30,7 @@ export const refreshSession = () =>
               // TODO - do it better
               console.log('Unathorized')
 
-                return reject(new Error('UNAUTHORIZED'))
+              return reject(new Error('UNAUTHORIZED'))
             }
 
             return reject(new Error('ERROR'))
@@ -54,13 +54,16 @@ export const restartSessionTimer = () => {
 
   console.log('Refresh session in ', delay / 1000 / 60, ' minutes')
 
-  timerRef = setTimeout(()=>{
-      refreshSession().then(()=>{
-          delay = getDelay()
-          timerRef = setTimeout(restartSessionTimer, delay)
-      }, ()=>{
-          store.dispatch(actions.user.setAuthorized(false))
-      })
+  timerRef = setTimeout(() => {
+    refreshSession().then(
+      () => {
+        delay = getDelay()
+        timerRef = setTimeout(restartSessionTimer, delay)
+      },
+      () => {
+        store.dispatch(actions.user.setAuthorized(false))
+      }
+    )
   }, delay)
 }
 

@@ -1,7 +1,7 @@
 import { w3cwebsocket as WebSocket, client as Websocket2 } from 'websocket'
 import { finnhubWsUrl, token } from '../constants'
 import { pubSub } from '../pubSub'
-import {setLastPrice} from '../cache'
+import { setLastPrice } from '../cache'
 
 type LastPriceData = {
   /**
@@ -54,8 +54,8 @@ const priceTimestamp: Record<string, number> = {}
 const processLastPrice = (tradeDataArray: Array<LastPriceData>) => {
   tradeDataArray.forEach((tradeData) => {
     if (
-        (!tradeData.c || tradeData.c?.length === 0) &&
-        (!priceTimestamp[tradeData.s] || priceTimestamp[tradeData.s] + 2000 < tradeData.t)
+      (!tradeData.c || tradeData.c?.length === 0) &&
+      (!priceTimestamp[tradeData.s] || priceTimestamp[tradeData.s] + 2000 < tradeData.t)
     ) {
       priceTimestamp[tradeData.s] = tradeData.t
       const formatedData = {
@@ -72,7 +72,7 @@ const processLastPrice = (tradeDataArray: Array<LastPriceData>) => {
   })
 }
 
-let socketIsOpened = false
+const socketIsOpened = false
 
 const sendBuffer: Array<any> = []
 // export const socket = new WebSocket(`${finnhubWsUrl}?token=${token}`)
@@ -120,26 +120,26 @@ const sendBuffer: Array<any> = []
 
 const socket2 = new Websocket2()
 
-socket2.on('connectFailed', (error)=>{
+socket2.on('connectFailed', (error) => {
   console.error('Websocket connect failed', error)
 })
 
-socket2.on('connect', (connection)=>{
+socket2.on('connect', (connection) => {
   console.log('Websocket connected')
 
-  connection.on('error', (error)=>{
+  connection.on('error', (error) => {
     console.error('Websocket connection failed')
 
-    setTimeout(()=>{
+    setTimeout(() => {
       connectWebsocket()
     }, 1000)
   })
 
-  connection.on('close', ()=>{
+  connection.on('close', () => {
     console.error('Websocket connection closed')
   })
 
-  connection.on('message', event=>{
+  connection.on('message', (event) => {
     // console.log('websocket message type: ', event.type)
     if (event.type === 'utf8') {
       const rawData = event.utf8Data
@@ -182,28 +182,28 @@ connectWebsocket()
 
 const subscriptionList = new Map<string, Set<string>>()
 
-export const lastPriceSubscribe = (symbol: string, userId:string) => {
+export const lastPriceSubscribe = (symbol: string, userId: string) => {
   if (!subscriptionList.has(symbol)) {
     subscriptionList.set(symbol, new Set())
   }
 
-  if(userId) {
+  if (userId) {
     subscriptionList.get(symbol)?.add(userId)
   }
 
-  sendBuffer.push(JSON.stringify({type: 'subscribe', symbol}))
+  sendBuffer.push(JSON.stringify({ type: 'subscribe', symbol }))
 }
 
 // TODO unsubscribe user if connection loses (keep in mind the user can connect from multiple places)
-export const lastPriceUnsubscribe = (symbol: string, userId:string) => {
+export const lastPriceUnsubscribe = (symbol: string, userId: string) => {
   if (subscriptionList.has(symbol)) {
-    if(userId && subscriptionList.get(symbol)?.has(userId)){
+    if (userId && subscriptionList.get(symbol)?.has(userId)) {
       subscriptionList.get(symbol)?.delete(userId)
     }
 
-    if(subscriptionList.get(symbol)?.size === 0) {
+    if (subscriptionList.get(symbol)?.size === 0) {
       subscriptionList.delete(symbol)
-      sendBuffer.push(JSON.stringify({type: 'unsubscribe', symbol}))
+      sendBuffer.push(JSON.stringify({ type: 'unsubscribe', symbol }))
     }
   }
 }

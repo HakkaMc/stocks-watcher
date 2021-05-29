@@ -1,12 +1,12 @@
 import React, { FC } from 'react'
 import { TextField, TextFieldProps } from '@material-ui/core'
-import { Controller, UseFormMethods } from 'react-hook-form'
+import { Controller, UseFormReturn } from 'react-hook-form'
 import classNames from 'classnames'
 
 import styles from './styles.module.scss'
 
 type Props = TextFieldProps & {
-  form: UseFormMethods<any>
+  form: UseFormReturn<any>
   name: string
   className?: string
   type?: 'date' | 'datetime-local' | 'time' | 'text'
@@ -16,9 +16,10 @@ export const Input: FC<Props> = ({ className, name, form, onBlur, onChange, type
   <Controller
     control={form.control}
     name={name || 'input'}
-    render={({ onBlur: controlOnBlur, ref, onChange: controlOnChange, value }) => (
+    render={({ field: { onBlur: controlOnBlur, ref, onChange: controlOnChange, value } }) => (
       <TextField
         {...rest}
+        name={name}
         className={classNames(styles.input, className)}
         type={type}
         onBlur={(event: any) => {

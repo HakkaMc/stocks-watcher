@@ -1,41 +1,87 @@
 import React, { useCallback } from 'react'
-import { List, Box, Divider } from '@material-ui/core'
-import {
-  Dashboard as DashboardIcon,
-  ExitToApp as ExitToAppIcon,
-  Timeline as TimelineIcon,
-  Settings as SettingsIcon,
-  Event as EventIcon,
-  Note as NoteIcon
-} from '@material-ui/icons'
+import { Box, Divider, List } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 
+import {
+  AddIcon,
+  ListIcon,
+  DashboardIcon,
+  EventIcon,
+  ExitToAppIcon,
+  NoteIcon,
+  SettingsIcon,
+  TimelineIcon
+} from '../../../../utils/icons'
 import { logout } from '../../../../utils/session'
-import {ModalRoutes, ROUTES} from '../../../../constants'
+import { ModalRoutes, OrderDialogType, ROUTES } from '../../../../constants'
 import { MenuItem } from '../MenuItem/MenuItem'
-import { useRedux } from '../../../../redux/useRedux'
+import { dispatchers } from '../../../../redux'
+
 import styles from './styles.module.scss'
 
 export const Menu = () => {
-  const { dispatchers } = useRedux()
-
-  const showNotes = useCallback(() => {
-    // dispatchers.app.toggleShowNotes()
-    dispatchers.modal.setRoute({route: ModalRoutes.Note, value: true})
-  }, [])
-
-  const showReminder = useCallback(() => {
-    dispatchers.modal.setRoute({route: ModalRoutes.Reminder, value: true})
-  }, [])
+  const openModal = useCallback(
+    (route: ModalRoutes, props?: Record<string, any>) => () => {
+      dispatchers.modal.open({ name: route, props })
+    },
+    []
+  )
 
   return (
     <Box bgcolor={grey[100]} className={styles.menu}>
       <Box mt={3}>
         <List>
-          <MenuItem Icon={<DashboardIcon color="action" />} text="Dashboard" to={ROUTES.DASHBOARD} />
-          <MenuItem Icon={<TimelineIcon color="action" />} text="Chart groups" to={ROUTES.CHART_GROUPS} />
-          <MenuItem Icon={<NoteIcon color="action" />} text="Notes" noActiveStyle onClick={showNotes} />
-          <MenuItem Icon={<EventIcon color="action" />} text="Reminder" noActiveStyle onClick={showReminder}/>
+          <MenuItem Icon={<DashboardIcon color="action" />} text="Dashboard" to={ROUTES.Dashboard} />
+
+          <MenuItem Icon={<TimelineIcon color="action" />} text="Chart groups" to={ROUTES.ChartGroups} />
+
+          <MenuItem Icon={<ListIcon color="action" />} text="Orders" noActiveStyle to={ROUTES.Orders} />
+
+          <MenuItem
+            Icon={<NoteIcon color="action" />}
+            text="Notes"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Note)}
+          />
+          <MenuItem
+            Icon={<EventIcon color="action" />}
+            text="Reminder"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Reminder)}
+          />
+          <MenuItem
+            Icon={<DashboardIcon color="action" />}
+            text="Binance Portfolio"
+            noActiveStyle
+            to={ROUTES.BinancePortfolio}
+          />
+
+          <MenuItem
+            Icon={<AddIcon color="action" />}
+            text="Binance Direct Buy Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectBuy })}
+          />
+          <MenuItem
+            Icon={<AddIcon color="action" />}
+            text="Binance Direct Sell Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectSell })}
+          />
+
+          <MenuItem
+            Icon={<AddIcon color="action" />}
+            text="Binance Fixed Trailing Stop Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceFixedTrailingStop })}
+          />
+
+          <MenuItem
+            Icon={<AddIcon color="action" />}
+            text="Binance Moving Buy Order"
+            noActiveStyle
+            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingBuy })}
+          />
         </List>
       </Box>
       <Divider />

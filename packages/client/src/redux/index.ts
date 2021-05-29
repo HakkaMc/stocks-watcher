@@ -5,6 +5,7 @@ import { useSelector as useReduxSelector, TypedUseSelectorHook } from 'react-red
 import { app } from './reducers/app'
 import { user } from './reducers/user'
 import { modal } from './reducers/modal'
+import { modalLoader } from './reducers/modalLoader'
 
 export const sagaMiddleware = createSagaMiddleware()
 
@@ -13,20 +14,22 @@ export const store = configureStore({
   reducer: {
     app: app.reducer,
     user: user.reducer,
-    modal: modal.reducer
+    modal: modal.reducer,
+    modalLoader: modalLoader.reducer
   }
 })
 
 export const actions = {
   app: app.actions,
   user: user.actions,
-  modal: modal.actions
+  modal: modal.actions,
+  modalLoader: modalLoader.actions
 }
 
 // export const dispatchers: typeof actions & {[x:string]: any} = {...actions}
 
-const tmpDispatchers:any = {}
-const tmpActions:any = actions
+const tmpDispatchers: any = {}
+const tmpActions: any = actions
 Object.keys(tmpActions).forEach((key) => {
   tmpDispatchers[key] = {}
 
@@ -39,7 +42,6 @@ Object.keys(tmpActions).forEach((key) => {
 })
 
 export const dispatchers: typeof actions = tmpDispatchers
-
 
 export type ReduxState = ReturnType<typeof store.getState>
 

@@ -19,7 +19,7 @@ const fetchItems = async () => {
   fetchItemsToTimestamp = new Date()
   fetchItemsToTimestamp.setMinutes(fetchItemsToTimestamp.getMinutes() + 10)
 
-  const items:any = await ReminderTsModel.find({
+  const items: any = await ReminderTsModel.find({
     active: true,
     createdAt: { $gte: from },
     timestamp: { $lte: fetchItemsToTimestamp.getTime() }
@@ -29,7 +29,7 @@ const fetchItems = async () => {
     items.forEach((item: EnhancedReminder) => {
       mapByIds[item._id.toString()] = item
 
-      const timestamp = item.timestamp
+      const { timestamp } = item
 
       if (timestamp < now) {
         immediateIds.push(item._id.toString())
@@ -111,5 +111,5 @@ export const startReminder = () => {
 
   processSending()
 
-  setInterval(processSending, 1*60*1000)
+  setInterval(processSending, 1 * 60 * 1000)
 }

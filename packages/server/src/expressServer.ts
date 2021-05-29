@@ -94,37 +94,36 @@ expressServer.get('/auth/google/callback', async (req, res) => {
     req.session.userId = user._id
   }
 
-
-
   req.session.cookie.expires = new Date(userInfo.accessTokenExpiration)
   req.session.cookie.maxAge = userInfo.accessTokenExpiration - Date.now()
 
   console.log('userId ', req.session.userId, ' saved', req.session.cookie.expires, req.session.cookie.maxAge)
 
   res.redirect(
-    `https://localhost:4001/auth/success?accessToken=${userInfo.accessToken}&refreshToken=${userInfo.refreshToken}&accessTokenExpiration=${userInfo.accessTokenExpiration}`
+    `https://localhost:${process.env.port?.toString() === '5001' ? 4005 : 4001}/auth/success?accessToken=${
+      userInfo.accessToken
+    }&refreshToken=${userInfo.refreshToken}&accessTokenExpiration=${userInfo.accessTokenExpiration}`
   )
 })
 
 expressServer.post('/auth/refresh', async (req, res) => {
-  const accessToken = (req.headers.authorization||'').replace('Bearer ', '')
+  const accessToken = (req.headers.authorization || '').replace('Bearer ', '')
   const { refreshToken } = req.body
   const { userId } = req.session
 
   console.log('============================================')
   console.log('refresh: ', refreshToken, accessToken, userId)
 
-  if(!userId || !accessToken || !refreshToken){
+  if (!userId || !accessToken || !refreshToken) {
     console.log('Refresh session failed')
 
-    if(!userId) console.log('Missing userId')
-    if(!accessToken) console.log('Missing accessToken')
-    if(!refreshToken) console.log('Missing refreshToken')
+    if (!userId) console.log('Missing userId')
+    if (!accessToken) console.log('Missing accessToken')
+    if (!refreshToken) console.log('Missing refreshToken')
 
     res.status(401).send()
-  }
-  else {
-    const user = await UserTsModel.findOne({_id: userId, accessToken, refreshToken})
+  } else {
+    const user = await UserTsModel.findOne({ _id: userId, accessToken, refreshToken })
 
     if (user) {
       // Prevent nonsense token refresh
@@ -137,8 +136,8 @@ expressServer.post('/auth/refresh', async (req, res) => {
         const token = await getRefreshedToken(refreshToken)
 
         await UserTsModel.updateOne(
-            {_id: user._id},
-            {accessToken: token.accessToken, accessTokenExpiration: token.accessTokenExpiration}
+          { _id: user._id },
+          { accessToken: token.accessToken, accessTokenExpiration: token.accessTokenExpiration }
         )
 
         req.session.cookie.expires = new Date(token.accessTokenExpiration)

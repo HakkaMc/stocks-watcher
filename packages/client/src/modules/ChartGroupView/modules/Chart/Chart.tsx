@@ -230,7 +230,6 @@ const options = {
 //   price: -1
 // }
 
-
 export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }: Props) => {
   let wheelEventInitialized = false
 
@@ -239,7 +238,7 @@ export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }:
 
   const { data, loading, error } = useQuery<{ getPrices: GetPrices }>(GET_PRICES, {
     variables: { symbol, range, timestampFrom: tmpTFrom.getTime(), timestampTo: tmpTto.getTime() },
-    fetchPolicy: 'no-cache'
+    fetchPolicy: 'network-only'
   })
   const lastPriceResponse = useSubscription<{
     lastPrice: LastPrice
@@ -380,11 +379,11 @@ export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }:
 
       let updated = false
 
-      const rawData = chart.series[0]?.options?.data||[]
+      const rawData = chart.series[0]?.options?.data || []
 
-      if(Array.isArray(rawData) && rawData.length) {
-        const lastPoint = rawData[rawData.length-1]
-        if(lastPoint[0]===timestamp){
+      if (Array.isArray(rawData) && rawData.length) {
+        const lastPoint = rawData[rawData.length - 1]
+        if (lastPoint[0] === timestamp) {
           lastPoint[1] = lastPriceResponse.data?.lastPrice.price
           updated = true
         }
@@ -395,7 +394,7 @@ export const Chart = ({ symbol, layout, range = '1', removeChart, chartsCount }:
         updated = true
       }
 
-      if(updated){
+      if (updated) {
         chart.series[0].setData([...rawData], true, false, true)
       }
     }

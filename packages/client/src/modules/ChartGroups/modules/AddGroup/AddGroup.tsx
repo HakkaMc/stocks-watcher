@@ -14,6 +14,7 @@ type FormValues = {
 
 export const AddGroup = () => {
   const [createChartGroup] = useMutation(CREATE_CHART_GROUP, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_CHART_GROUPS
@@ -39,9 +40,9 @@ export const AddGroup = () => {
   return (
     <div className={styles.container}>
       <form>
-        <Input form={form} name="name" placeholder="New group name" className={styles.input}/>
+        <Input form={form} name="name" placeholder="New group name" className={styles.input} />
         <IconButton onClick={save}>
-          <SaveIcon color="primary" className={styles.saveIcon}/>
+          <SaveIcon color="primary" className={styles.saveIcon} />
         </IconButton>
       </form>
     </div>

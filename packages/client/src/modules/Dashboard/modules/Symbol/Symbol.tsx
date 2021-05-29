@@ -3,7 +3,7 @@ import { Box, Icon, IconButton, Tooltip } from '@material-ui/core'
 import { grey, green } from '@material-ui/core/colors'
 import { FormattedNumber } from 'react-intl'
 import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
-import {Symbol as SymbolType, GetQuote, LastPrice, Scalars} from '@sw/shared/src/graphql'
+import { Symbol as SymbolType, GetQuote, LastPrice, Scalars } from '@sw/shared/src/graphql'
 import classNames from 'classnames'
 import { RocketLaunchOutline as RocketIcon } from 'mdi-material-ui'
 import styles from './styles.module.scss'
@@ -67,14 +67,14 @@ export const Symbol = ({ symbol }: Props) => {
     setForceRefreshTrigger(Date.now())
   }, [setForceRefreshTrigger])
 
-  const quoteData = useMemo(():GetQuote=>{
+  const quoteData = useMemo((): GetQuote => {
     setRefreshTime(new Date().toLocaleTimeString())
     return {
       openPrice: quoteResponse.data?.getQuote?.openPrice || Number.NaN,
       highPrice: quoteResponse.data?.getQuote?.highPrice || Number.NaN,
-      lowPrice:quoteResponse.data?.getQuote?.lowPrice || Number.NaN,
+      lowPrice: quoteResponse.data?.getQuote?.lowPrice || Number.NaN,
       currentPrice: quoteResponse.data?.getQuote?.currentPrice || Number.NaN,
-      previousClose: quoteResponse.data?.getQuote?.previousClose || Number.NaN,
+      previousClose: quoteResponse.data?.getQuote?.previousClose || Number.NaN
     }
   }, [quoteResponse])
 
@@ -127,9 +127,9 @@ export const Symbol = ({ symbol }: Props) => {
         </Box>
         <Box>
           <Tooltip title={refreshTime}>
-          <IconButton onClick={refreshData}>
-            <RefreshIcon />
-          </IconButton>
+            <IconButton onClick={refreshData}>
+              <RefreshIcon />
+            </IconButton>
           </Tooltip>
         </Box>
       </div>

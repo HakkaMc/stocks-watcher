@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { DashboardWatchlists } from '@sw/shared/src/graphql'
 import { grey } from '@material-ui/core/colors'
-import { Box, Icon, IconButton, Tooltip } from '@material-ui/core'
+import { Box, IconButton } from '@material-ui/core'
 import classNames from 'classnames'
-import { useSubscription, useMutation, useQuery, useLazyQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { Symbol } from '../Symbol/Symbol'
 import { VisibilityIcon, VisibilityOffIcon } from '../../../../utils/icons'
-import {WatchlistName} from "../WatchlistName/WatchlistName";
+import { WatchlistName } from '../WatchlistName/WatchlistName'
 
 import styles from './styles.module.scss'
 import { CHANGE_WATCHLIST_SETTINGS, GET_DASHBOARD } from '../../../../gqls'
@@ -20,6 +20,7 @@ export const Watchlist = ({ watchlist }: Props) => {
   const [renderedAlready, setRenderedAlready] = useState(true)
 
   const [changeWatchlistSettings] = useMutation(CHANGE_WATCHLIST_SETTINGS, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_DASHBOARD
@@ -69,7 +70,7 @@ export const Watchlist = ({ watchlist }: Props) => {
             {hiddenContent ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </IconButton>
         </Box>
-        <WatchlistName watchlist={watchlist}/>
+        <WatchlistName watchlist={watchlist} />
       </Box>
       <div className={classNames(styles.symbols, { [styles.hidden]: hiddenContent })}>{renderedAlready && symbols}</div>
     </Box>

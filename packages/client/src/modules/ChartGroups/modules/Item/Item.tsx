@@ -14,6 +14,7 @@ type Props = {
 
 export const Item = ({ data }: Props) => {
   const [removeChartGroup, removeChartGroupResponse] = useMutation(REMOVE_CHART_GROUP, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_CHART_GROUPS
@@ -22,6 +23,7 @@ export const Item = ({ data }: Props) => {
   })
 
   const [removeChartFromChartGroup, removeChartFromChartGroupResponse] = useMutation(REMOVE_CHART_FROM_CHART_GROUP, {
+    fetchPolicy: 'no-cache',
     refetchQueries: [
       {
         query: GET_CHART_GROUPS
@@ -55,7 +57,7 @@ export const Item = ({ data }: Props) => {
         <Box color={grey[600]}>{data.name}</Box>
 
         <a
-          href={ROUTES.CHART_GROUP_VIEW.replace(':chartGroupId', data._id)}
+          href={ROUTES.ChartGroupView.replace(':chartGroupId', data._id)}
           target="_blank"
           rel="noreferrer"
           className={styles.link}

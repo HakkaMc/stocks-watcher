@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  &.sizeOne {
+    height: 32px;
+  }
+
+  &.sizeTwo {
+    height: 42px;
+  }
+}

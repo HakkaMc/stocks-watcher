@@ -3,56 +3,63 @@ import { Box, IconButton } from '@material-ui/core'
 import { useForm } from 'react-hook-form'
 import { grey } from '@material-ui/core/colors'
 import { useMutation, useLazyQuery } from '@apollo/client'
-import {PriceAlert as PriceAlertType} from '@sw/shared/src/graphql'
+import { PriceAlert as PriceAlertType } from '@sw/shared/src/graphql'
 import { NotificationsIcon, CloseIcon, SaveIcon } from '../../../../utils/icons'
 import styles from './styles.module.scss'
 import { Input } from '../../../../form'
-import {GET_PRICE_ALERTS, SET_PRICE_ALERT, REMOVE_PRICE_ALERT} from '../../../../gqls'
+import { GET_PRICE_ALERTS, SET_PRICE_ALERT, REMOVE_PRICE_ALERT } from '../../../../gqls'
 
 type FormValues = {
-    targetPrice: string
+  targetPrice: string
 }
 
 type Props = {
-    symbol: string
+  symbol: string
 }
 
-export const PriceAlert = ({symbol}: Props) => {
+export const PriceAlert = ({ symbol }: Props) => {
   const containerRef = useRef(null)
   const [show, setShow] = useState(false)
   const form = useForm<FormValues>()
 
-    const [getPriceAlerts, priceAlertsResponse] = useLazyQuery<{getPriceAlerts: Array<PriceAlertType>}>(GET_PRICE_ALERTS, {
-        fetchPolicy: 'no-cache'
-    })
-    const [savePriceAlert] = useMutation(SET_PRICE_ALERT, {
-        refetchQueries: [
-            {
-                query: GET_PRICE_ALERTS,
-                variables: {
-                    symbol
-                }
-            }
-        ]
-    })
-    const [removePriceAlert] = useMutation(REMOVE_PRICE_ALERT, {
-        refetchQueries: [
-            {
-                query: GET_PRICE_ALERTS,
-                variables: {
-                    symbol
-                }
-            }
-        ]
-    })
-
-    useEffect(()=>{
-        if(show){
-            getPriceAlerts({variables:{
-                    symbol
-                }})
+  const [getPriceAlerts, priceAlertsResponse] = useLazyQuery<{ getPriceAlerts: Array<PriceAlertType> }>(
+    GET_PRICE_ALERTS,
+    {
+      fetchPolicy: 'network-only'
+    }
+  )
+  const [savePriceAlert] = useMutation(SET_PRICE_ALERT, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [
+      {
+        query: GET_PRICE_ALERTS,
+        variables: {
+          symbol
         }
-    }, [show, getPriceAlerts])
+      }
+    ]
+  })
+  const [removePriceAlert] = useMutation(REMOVE_PRICE_ALERT, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [
+      {
+        query: GET_PRICE_ALERTS,
+        variables: {
+          symbol
+        }
+      }
+    ]
+  })
+
+  useEffect(() => {
+    if (show) {
+      getPriceAlerts({
+        variables: {
+          symbol
+        }
+      })
+    }
+  }, [show, getPriceAlerts])
 
   const toggleShow = useCallback(() => {
     setShow(!show)
@@ -75,25 +82,28 @@ export const PriceAlert = ({symbol}: Props) => {
   }, [])
 
   const save = useCallback(() => {
-      const { targetPrice } = form.getValues()
+    const { targetPrice } = form.getValues()
 
-      if(targetPrice) {
-          hide()
-          savePriceAlert({
-              variables: {
-                  symbol,
-                  targetPrice: parseFloat(targetPrice)
-              }
-          })
-      }
+    if (targetPrice) {
+      hide()
+      savePriceAlert({
+        variables: {
+          symbol,
+          targetPrice: parseFloat(targetPrice)
+        }
+      })
+    }
   }, [savePriceAlert, hide])
 
-  const remove = useCallback((priceAlertId: string) => () => {
-      if(priceAlertId){
-          hide()
-          removePriceAlert({variables: {id: priceAlertId}})
+  const remove = useCallback(
+    (priceAlertId: string) => () => {
+      if (priceAlertId) {
+        hide()
+        removePriceAlert({ variables: { id: priceAlertId } })
       }
-  }, [removePriceAlert])
+    },
+    [removePriceAlert]
+  )
 
   return (
     <div className={styles.flags}>
@@ -118,7 +128,7 @@ export const PriceAlert = ({symbol}: Props) => {
                   ))}
                   <tr>
                     <td>
-                      <Input form={form} name="targetPrice" placeholder="Target price"/>
+                      <Input form={form} name="targetPrice" placeholder="Target price" />
                     </td>
                     <td>
                       <IconButton onClick={save}>

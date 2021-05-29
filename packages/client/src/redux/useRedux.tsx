@@ -33,7 +33,7 @@ export function useRedux<TSelected = unknown>(
   const wholeState = useSelector((state: ReduxState) => state)
 
   let selectedState = {} as TSelected
-  if(selector) {
+  if (selector) {
     selectedState = selector(wholeState)
   }
 

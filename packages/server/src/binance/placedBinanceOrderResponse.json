@@ -1,0 +1,69 @@
+[
+  {
+    url: 'https://api2.binance.com/api/v3/order',
+    method: 'post',
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-MBX-APIKEY': '37qM6VegII5v4bmQ5kBw4zsonT00efSer7GaPIT61BfQtGELcF1suAh84F2Z2Buc',
+      'User-Agent': 'axios/0.21.1'
+    },
+    params: {
+      symbol: 'BTCBUSD',
+      side: 'BUY',
+      newOrderRespType: 'FULL',
+      type: 'LIMIT',
+      price: 36625,
+      timeInForce: 'GTC',
+      quantity: 0.013605,
+      timestamp: 1622191843852,
+      signature: '84eea2fdb15a13a3ab4de49380fe95e007e7817e6e28982507b2bfc552d478fe'
+    },
+    transformRequest: [
+      [
+        Function
+        :
+        transformRequest
+      ]
+    ],
+    transformResponse: [
+      [
+        Function
+        :
+        transformResponse
+      ]
+    ],
+    timeout: 0,
+    adapter: [
+      Function
+      :
+      httpAdapter
+    ],
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    validateStatus: [
+      Function
+      :
+      validateStatus
+    ],
+    data: undefined
+  }
+  {
+    symbol: 'BTCBUSD',
+    orderId: 2561120863,
+    orderListId: -1,
+    clientOrderId: 'KAYeH9x6KniRqOqxKtgRFR',
+    transactTime: 1622191844530,
+    price: '36625.00000000',
+    origQty: '0.01360500',
+    executedQty: '0.00000000',
+    cummulativeQuoteQty: '0.00000000',
+    status: 'NEW',
+    timeInForce: 'GTC',
+    type: 'LIMIT',
+    side: 'BUY',
+    fills: []
+  }
+]

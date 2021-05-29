@@ -1,37 +1,33 @@
-import React, { ReactElement, Suspense } from 'react'
-import { IconButton, Box } from '@material-ui/core'
-import { KeyboardBackspace as KeyboardBackspaceIcon } from '@material-ui/icons'
+import React, { Suspense } from 'react'
+import { Box } from '@material-ui/core'
 import { Switch, Route } from 'react-router-dom'
-import { grey } from '@material-ui/core/colors'
-import { Loader, ScreenLoader } from '../../components'
-import { DashboardLazy, ChartGroupsLazy } from '../lazy'
-import { CentralModal } from '../CentralModal/CentralModal'
+import { Loader } from '../../components'
+import { BinanceLazy, DashboardLazy, ChartGroupsLazy, OrdersLazy } from '../lazy'
 import styles from './styles.module.scss'
 
 import { Menu } from './modules/Menu/Menu'
-import {Brokers} from "./modules/Brokers/Brokers";
-import {ModalRouter} from "../ModalRouter/ModalRouter";
+import { Brokers } from './modules/Brokers/Brokers'
+import { ROUTES } from '../../constants'
 
-// <NoteModal />
-// <CentralModal />
+export const App = () => {
+  console.log('render APP')
 
-export const App = () => (
-  <>
+  return (
     <div className={styles.layout}>
       <Box className={styles.leftColumn}>
-        <Brokers/>
+        <Brokers />
         <Menu />
       </Box>
       <div className={styles.rightColumn}>
         <Suspense fallback={<Loader />}>
           <Switch>
-            <Route path="/app/dashboard" component={DashboardLazy} />
-            <Route path="/app/chartgroups" component={ChartGroupsLazy} />
+            <Route path={ROUTES.Dashboard} component={DashboardLazy} />
+            <Route path={ROUTES.ChartGroups} component={ChartGroupsLazy} />
+            <Route path={ROUTES.BinancePortfolio} component={BinanceLazy} />
+            <Route path={ROUTES.Orders} component={OrdersLazy} />
           </Switch>
         </Suspense>
       </div>
     </div>
-
-    <ModalRouter/>
-  </>
-)
+  )
+}
