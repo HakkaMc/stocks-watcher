@@ -112,6 +112,7 @@ export class Websocket {
     }, 300)
 
     if (!this.lazyConnect) {
+      console.log(`${this.name} websocket - call reconnect from constructor`)
       this.reconnect()
     }
   }
@@ -199,6 +200,10 @@ export class Websocket {
 
   private onMessageCallback = (message: IMessage) => {
     this.pingPromise.resolve()
+
+    if (this.name === 'Binance User') {
+      console.log(`${this.name} websocket message`, message.type === 'utf8', !!message.utf8Data)
+    }
 
     if (message.type === 'utf8' && message.utf8Data) {
       if (this.onMessage) {

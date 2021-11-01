@@ -62,6 +62,7 @@ module.exports = {
     'global-require': 'off',
     radix: 'off',
     'react/destructuring-assignment': 'off',
-    'import/no-extraneous-dependencies': 'off'
+    'import/no-extraneous-dependencies': 'off',
+    'spaced-comment': 'off'
   }
 }

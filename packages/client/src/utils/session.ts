@@ -47,21 +47,24 @@ const getDelay = () => {
   const delay = accessTokenExpiration - Date.now() - 5 * 60 * 1000
 
   // TODO - debugging session refresh
-  return delay / 2
+  // return delay / 2
+  // return 5*60*1000
+  return delay
 }
 
 export const restartSessionTimer = () => {
   clearTimeout(timerRef)
 
-  let delay = getDelay()
+  const delay = getDelay()
 
   console.log('Refresh session in ', delay / 1000 / 60, ' minutes')
 
   timerRef = setTimeout(() => {
     refreshSession().then(
       () => {
-        delay = getDelay()
-        timerRef = setTimeout(restartSessionTimer, delay)
+        // delay = getDelay()
+        // timerRef = setTimeout(restartSessionTimer, delay)
+        restartSessionTimer()
       },
       () => {
         store.dispatch(actions.user.setAuthorized(false))

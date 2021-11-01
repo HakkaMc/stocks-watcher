@@ -1,0 +1,13 @@
+.flex {
+  display: flex;
+  align-items: flex-end;
+
+  & > *:nth-child(1){
+    flex: 1 1 auto;
+  }
+
+  & > *:nth-child(2){
+    flex: 0 0 60px;
+    margin-left: 15px;
+  }
+}

@@ -1,15 +1,15 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { IconButton } from '@material-ui/core'
-import { CancelBinanceOrder } from '@sw/shared/src/graphql'
-import { FormattedDate, FormattedTime } from 'react-intl'
-import { useMutation } from '@apollo/client'
+import { FormattedDate, FormattedNumber, FormattedTime } from "react-intl";
+import { useMutation } from "@apollo/client";
 
 import { Modal } from '../../Modal/Modal'
 import { CloseIcon } from '../../../utils/icons'
-import { CANCEL_BINANCE_ORDER, GET_BINANCE_ORDERS, GET_ORDERS } from '../../../gqls'
+import { CANCEL_BINANCE_ORDER, GET_BINANCE_ORDERS, GET_BINANCE_SYMBOLS, GET_ORDERS } from "../../../gqls";
 import { ModalTemplate } from '../../../components'
 import { BinanceOrders_getBinanceOrders } from '../../../types/graphql/generated/BinanceOrders'
-import { CancelBinanceOrderVariables } from '../../../types/graphql/generated/CancelBinanceOrder'
+import { CancelBinanceOrderVariables, CancelBinanceOrder } from '../../../types/graphql/generated/CancelBinanceOrder'
+import { getPrecision } from "../../../utils/mix";
 
 type Props = BinanceOrders_getBinanceOrders
 
@@ -52,13 +52,8 @@ export const BinanceRow = ({
   }, [symbol, orderId, cancelOrder])
 
   useEffect(() => {
-    if (!cancelOrderResponse.loading) {
-      if (cancelOrderResponse.error) {
-        console.log(cancelOrderResponse.error)
+    if (!cancelOrderResponse.loading && cancelOrderResponse.error) {
         setShowCancelOrderInfoDialog(true)
-      } else {
-        console.log(cancelOrderResponse.data)
-      }
     }
   }, [cancelOrderResponse])
 
@@ -75,12 +70,23 @@ export const BinanceRow = ({
         </td>
         <td>
           <div>
-            {price} / {stopPrice}
+            {/*{price} / {stopPrice}*/}
+            <FormattedNumber value={price} minimumFractionDigits={getPrecision(price)} style="currency" currency="USD"/>
+            {stopPrice>0 && <>
+              {' / '}
+              <FormattedNumber value={stopPrice} minimumFractionDigits={getPrecision(stopPrice)} style="currency" currency="USD"/>
+            </>}
           </div>
         </td>
         <td>
           <div>
-            {origQty} / {executedQty}
+            {/*{executedQty} / {origQty}*/}
+            <FormattedNumber value={executedQty} minimumFractionDigits={getPrecision(executedQty)}/>
+            {' / '}
+            <FormattedNumber value={origQty} minimumFractionDigits={getPrecision(origQty)}/>
+          </div>
+          <div>
+            <FormattedNumber value={price*origQty} minimumFractionDigits={getPrecision(price*origQty)} style="currency" currency="USD"/>
           </div>
         </td>
         <td>

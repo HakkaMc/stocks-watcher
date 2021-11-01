@@ -5,6 +5,7 @@
   & > * {
     &:first-child{
       flex: 1 1 auto;
+      overflow: auto;
     }
 
     &:last-child{

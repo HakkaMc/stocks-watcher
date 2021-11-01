@@ -17,7 +17,7 @@ type Props = {
 
 export const Watchlist = ({ watchlist }: Props) => {
   const [hiddenContent, hideContent] = useState(!!watchlist.hidden)
-  const [renderedAlready, setRenderedAlready] = useState(true)
+  const [renderedAlready, setRenderedAlready] = useState(!watchlist.hidden)
 
   const [changeWatchlistSettings] = useMutation(CHANGE_WATCHLIST_SETTINGS, {
     fetchPolicy: 'no-cache',
@@ -29,7 +29,9 @@ export const Watchlist = ({ watchlist }: Props) => {
   })
 
   const symbols = useMemo(() => {
-    if (watchlist?.symbolsData?.length) {
+    if (watchlist?.symbolsData?.length && (!hiddenContent || renderedAlready)) {
+      setRenderedAlready(true)
+
       // A new copy of array because the original array is freezed
       const symbolsDataSorted = watchlist.symbolsData.slice().sort((a, b) => {
         if (a && b) {
@@ -48,7 +50,7 @@ export const Watchlist = ({ watchlist }: Props) => {
     }
 
     return <></>
-  }, [watchlist])
+  }, [watchlist, renderedAlready])
 
   const toggleVisibility = useCallback(() => {
     const value = !hiddenContent
@@ -72,7 +74,7 @@ export const Watchlist = ({ watchlist }: Props) => {
         </Box>
         <WatchlistName watchlist={watchlist} />
       </Box>
-      <div className={classNames(styles.symbols, { [styles.hidden]: hiddenContent })}>{renderedAlready && symbols}</div>
+      <div className={classNames(styles.symbols, { [styles.hidden]: hiddenContent })}>{symbols}</div>
     </Box>
   )
 }

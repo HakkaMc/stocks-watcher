@@ -1,16 +1,20 @@
 import React, { useCallback } from 'react'
-import { Box, Divider, List } from '@material-ui/core'
+import { Box, Divider, List, ListItem, ListItemIcon, ListItemText } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 
 import {
   AddIcon,
+  RemoveIcon,
   ListIcon,
   DashboardIcon,
   EventIcon,
   ExitToAppIcon,
   NoteIcon,
   SettingsIcon,
-  TimelineIcon
+  TimelineIcon,
+  ExposureIcon,
+  WalletIcon,
+  BitcoinIconFa
 } from '../../../../utils/icons'
 import { logout } from '../../../../utils/session'
 import { ModalRoutes, OrderDialogType, ROUTES } from '../../../../constants'
@@ -35,9 +39,66 @@ export const Menu = () => {
 
           <MenuItem Icon={<TimelineIcon color="action" />} text="Chart groups" to={ROUTES.ChartGroups} />
 
-          <MenuItem Icon={<ListIcon color="action" />} text="Orders" noActiveStyle to={ROUTES.Orders} />
+          <Box pl={3} pr={3}>
+            <ListItem>
+              <ListItemIcon>
+                <BitcoinIconFa size="24px" />
+              </ListItemIcon>
+              <ListItemText primary="Binance" />
+            </ListItem>
 
-          <MenuItem Icon={<ListIcon color="action" />} text="Trades" noActiveStyle to={ROUTES.Trades} />
+            <MenuItem
+              Icon={<WalletIcon color="action" />}
+              text="Portfolio"
+              noActiveStyle
+              to={ROUTES.BinancePortfolio}
+            />
+
+            <MenuItem Icon={<ListIcon color="action" />} text="Trade list" noActiveStyle to={ROUTES.Trades} />
+
+            <MenuItem Icon={<ListIcon color="action" />} text="Order list" noActiveStyle to={ROUTES.Orders} />
+
+            <MenuItem
+              Icon={<AddIcon color="action" />}
+              text="Direct Buy Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectBuy })}
+            />
+            <MenuItem
+              Icon={<RemoveIcon color="action" />}
+              text="Direct Sell Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectSell })}
+            />
+
+            <MenuItem
+              Icon={<RemoveIcon color="action" />}
+              text="Fixed Trailing Stop Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceFixedTrailingStop })}
+            />
+
+            <MenuItem
+              Icon={<RemoveIcon color="action" />}
+              text="Moving Trailing Stop Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingTrailingStop })}
+            />
+
+            <MenuItem
+              Icon={<AddIcon color="action" />}
+              text="Moving Buy Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingBuy })}
+            />
+
+            <MenuItem
+              Icon={<ExposureIcon color="action" />}
+              text="Consolidation Order"
+              noActiveStyle
+              onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceConsolidation })}
+            />
+          </Box>
 
           <MenuItem
             Icon={<NoteIcon color="action" />}
@@ -50,53 +111,6 @@ export const Menu = () => {
             text="Reminder"
             noActiveStyle
             onClick={openModal(ModalRoutes.Reminder)}
-          />
-          <MenuItem
-            Icon={<DashboardIcon color="action" />}
-            text="Binance Portfolio"
-            noActiveStyle
-            to={ROUTES.BinancePortfolio}
-          />
-
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Direct Buy Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectBuy })}
-          />
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Direct Sell Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceDirectSell })}
-          />
-
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Fixed Trailing Stop Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceFixedTrailingStop })}
-          />
-
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Moving Trailing Stop Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingTrailingStop })}
-          />
-
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Moving Buy Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceMovingBuy })}
-          />
-
-          <MenuItem
-            Icon={<AddIcon color="action" />}
-            text="Binance Consolidation Order"
-            noActiveStyle
-            onClick={openModal(ModalRoutes.Order, { orderDialogType: OrderDialogType.BinanceConsolidation })}
           />
         </List>
       </Box>

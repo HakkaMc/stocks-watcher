@@ -59,7 +59,7 @@ export const Symbol = ({ symbol }: Props) => {
       currentPrice = lastPriceData.lastPrice.price
     }
 
-    if (currentPrice !== Number.NaN && previousClose !== Number.NaN) {
+    if (!Number.isNaN(currentPrice) && !Number.isNaN(previousClose)) {
       gain = (100 / previousClose) * currentPrice - 100
     }
 
@@ -67,7 +67,6 @@ export const Symbol = ({ symbol }: Props) => {
   }, [quoteResponse, lastPriceData, lastPriceLoading, lastPriceError])
 
   const refreshData = useCallback(() => {
-    console.log('refreshData')
     setForceRefreshTrigger(Date.now())
   }, [setForceRefreshTrigger])
 

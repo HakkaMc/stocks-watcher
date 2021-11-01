@@ -1,8 +1,7 @@
 import mongoose from 'mongoose'
 import { BinanceTradeTsModel } from '../database/binanceTrade/schema'
 import { getTrades, getAccountInformation, getExchangeInfo } from './queries'
-
-const quoteAssets = ['USDT', 'BUSD']
+import { dollarAssets, isDollarAsset } from "@sw/shared/src";
 
 const inProgressMap: Record<string, boolean> = {}
 
@@ -28,66 +27,75 @@ export const syncTrades = async (userId: string, specificAssets: Array<string> |
 
     console.log('syncTrades')
 
-    // TODO - cache exchange info
     const exchangeInfo = await getExchangeInfo()
-    const accInfo = await getAccountInformation()
 
-    if (!accInfo.error && accInfo.data?.balances.length && !exchangeInfo.error) {
-      for (let i = 0; i < accInfo.data?.balances?.length; i++) {
-        const balance = accInfo.data?.balances[i]
-        const assetAmount = balance.free + balance.locked
+    let assets: Array<string>
 
-        if (
-          assetAmount > 0 &&
-          !quoteAssets.includes(balance.asset) &&
-          (!specificAssets?.length || specificAssets?.includes(balance.asset))
-        ) {
-          for (let j = 0; j < quoteAssets.length; j++) {
-            const symbol = `${balance.asset}${quoteAssets[j]}`
+    if (specificAssets.length) {
+      assets = specificAssets
+    } else {
+      assets = []
 
-            let startTime = await getStartTime(userId, symbol)
+      const accInfo = await getAccountInformation()
 
-            if (exchangeInfo.data[symbol]) {
-              console.log(symbol, ' get trades from timestamp: ', new Date(startTime).toISOString())
+      if (!accInfo.error && accInfo.data?.balances.length && !exchangeInfo.error) {
+        for (let i = 0; i < accInfo.data?.balances?.length; i++) {
+          const balance = accInfo.data?.balances[i]
+          // const assetAmount = balance.free + balance.locked
 
-              let repeat = true
+          if (!isDollarAsset(balance.asset)) {
+            assets.push(balance.asset)
+          }
+        }
+      }
+    }
 
-              while (repeat) {
-                const trades = await getTrades(symbol, startTime)
+    for (let i = 0; i < assets.length; i++) {
+      for (let j = 0; j < dollarAssets.length; j++) {
+        const symbol = `${assets[i]}${dollarAssets[j]}`
 
-                if (!trades.error && trades.data.length) {
-                  // TODO - if data.length >= 1000, then call getTrades again
+        let startTime = await getStartTime(userId, symbol)
 
-                  for (let k = 0; k < trades.data.length; k++) {
-                    const trade = trades.data[k]
+        if (exchangeInfo.data[symbol]) {
+          console.log('syncTrades: ', symbol, ' get trades from timestamp: ', new Date(startTime).toISOString())
 
-                    const enhancedData: any = {
-                      ...trade,
-                      user: mongoose.Types.ObjectId(userId),
-                      baseAsset: balance.asset,
-                      quoteAsset: quoteAssets[j],
-                      tradeId: trade.id
-                    }
-                    delete enhancedData.id
+          let repeat = true
 
-                    await new BinanceTradeTsModel(enhancedData).save()
-                  }
+          while (repeat) {
+            const trades = await getTrades(symbol, startTime)
 
-                  if (trades.data.length >= 1000) {
-                    startTime = await getStartTime(userId, symbol)
-                  } else {
-                    repeat = false
-                  }
-                } else {
-                  repeat = false
+            if (!trades.error && trades.data.length) {
+              console.log('trades: ', symbol, trades)
+
+              for (let k = 0; k < trades.data.length; k++) {
+                const trade = trades.data[k]
+
+                const enhancedData: any = {
+                  ...trade,
+                  user: mongoose.Types.ObjectId(userId),
+                  baseAsset: assets[i],
+                  quoteAsset: dollarAssets[j],
+                  tradeId: trade.id
                 }
+                delete enhancedData.id
+
+                await new BinanceTradeTsModel(enhancedData).save()
               }
+
+              if (trades.data.length >= 1000) {
+                startTime = await getStartTime(userId, symbol)
+              } else {
+                repeat = false
+              }
+            } else {
+              repeat = false
             }
           }
         }
       }
     }
   }
+
 
   inProgressMap[userId] = false
 }

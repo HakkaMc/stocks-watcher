@@ -1,29 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Paper, Box, IconButton, Checkbox } from '@material-ui/core'
-import { BinanceAccountInformation, BinanceBalanceUpdate, BinanceLastPrice } from '@sw/shared/src/graphql'
+import { Box, IconButton, Checkbox, Tooltip } from '@material-ui/core'
 import { useQuery, useSubscription, useMutation } from '@apollo/client'
 import { grey } from '@material-ui/core/colors'
 import { FormattedDate, FormattedTime } from 'react-intl'
 
 import {
   BINANCE_BALANCE_UPDATE_SUBSCRIPTION,
-  GET_BINANCE_ACCOUNT_INFORMATION,
+  GET_BINANCE_INVESTED_AMOUNT,
   GET_BINANCE_PROFILE,
-  GET_ORDERS,
   REFRESH_BINANCE_TRADES
 } from '../../gqls'
-import { CloseIcon, RefreshIcon } from '../../utils/icons'
+import { RefreshIcon } from '../../utils/icons'
 import { dispatchers } from '../../redux'
-import { Row } from './modules/Row'
 import { Row2 } from './modules/Row2'
 import { SummaryRows } from './modules/SummaryRows'
 
 import styles from './styles.module.scss'
 import { Label } from '../../components'
-import {
-  GetBinanceProfile,
-  GetBinanceProfile_getBinanceProfile_countedBalance
-} from '../../types/graphql/generated/GetBinanceProfile'
+import { GetBinanceProfile } from '../../types/graphql/generated/GetBinanceProfile'
+import { GetBinanceInvestedAmount } from '../../types/graphql/generated/GetBinanceInvestedAmount'
+import { updateDeposit } from './store'
 
 export const BinancePortfolio = () => {
   const modalLoaderId = 'BINANCE'
@@ -41,6 +37,11 @@ export const BinancePortfolio = () => {
   // )
 
   const binanceProfile = useQuery<GetBinanceProfile>(GET_BINANCE_PROFILE, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true
+  })
+
+  const binanceInvestedAmount = useQuery<GetBinanceInvestedAmount>(GET_BINANCE_INVESTED_AMOUNT, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true
   })
@@ -72,6 +73,12 @@ export const BinancePortfolio = () => {
     }
   }, [balanceUpdateResponse.loading])
 
+  useEffect(() => {
+    if (binanceInvestedAmount?.data && !Number.isNaN(binanceInvestedAmount?.data?.getBinanceInvestedAmount)) {
+      updateDeposit(binanceInvestedAmount.data.getBinanceInvestedAmount)
+    }
+  }, [binanceInvestedAmount])
+
   const refreshDb = useCallback(() => {
     setRefreshingDb(true)
     resfreshBinanceTrades()
@@ -90,7 +97,26 @@ export const BinancePortfolio = () => {
   const balances = useMemo(() => {
     const originalBalances = binanceProfile.data?.getBinanceProfile?.countedBalance
     if (Array.isArray(originalBalances)) {
-      return [...originalBalances].sort((a: any, b: any) => a.asset.localeCompare(b.asset))
+      return [...originalBalances]
+        .filter(
+          (balance) =>
+            !!balance &&
+            (balance?.amount > 0 ||
+              balance?.quantity > 0 ||
+              balance?.averagePurchasePrice > 0 ||
+              balance?.realizedProfit !== 0)
+        )
+        .sort((a: any, b: any) => {
+          if (['BUSD', 'USDT', 'USDC'].includes(a.asset) && !['BUSD', 'USDT', 'USDC'].includes(b.asset)) {
+            return -1
+          }
+
+          if (!['BUSD', 'USDT', 'USDC'].includes(a.asset) && ['BUSD', 'USDT', 'USDC'].includes(b.asset)) {
+            return 1
+          }
+
+          return a.asset.localeCompare(b.asset)
+        })
     }
     return []
   }, [binanceProfile])
@@ -130,24 +156,29 @@ export const BinancePortfolio = () => {
 
       <Box className={styles.tableWrapper} pr={3} pl={3} pt={3} pb={3}>
         <table>
-          <tbody>
+          <thead>
             <tr>
               <th>Symbol</th>
-              <th>Množství</th>
-              <th colSpan={2}>Cena za akcii</th>
-              <th colSpan={2}>Hodnota</th>
+              <th>Quantity</th>
+              <th colSpan={2}>Price per share</th>
+              <th colSpan={2}>Value</th>
               <th className={styles.equalCell}>&nbsp;</th>
-              <th colSpan={2}>Nerealizovaný zisk/ztráta</th>
-              <th>Realizovaný zisk/ztráta</th>
+              <th colSpan={2}>Unrealized P/L</th>
+              <th>
+                <Tooltip title="Realized profit/lost">
+                  <span>P/L</span>
+                </Tooltip>
+              </th>
               <th>&nbsp;</th>
             </tr>
-
-            <>
-              {balances.map((balance, i) => (
-                <Row2 key={`row_${balance?.asset}`} balance={balance as any} showAll={showAll} index={i} />
-              ))}
-            </>
-            <SummaryRows />
+          </thead>
+          <tbody>
+          <>
+            {balances.map((balance, i) => (
+              <Row2 key={`row_${balance?.asset}`} balance={balance as any} showAll={showAll} index={i} />
+            ))}
+          </>
+          <SummaryRows />
           </tbody>
         </table>
       </Box>

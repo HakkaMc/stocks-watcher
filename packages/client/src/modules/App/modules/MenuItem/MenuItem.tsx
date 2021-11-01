@@ -26,11 +26,9 @@ export const MenuItem = ({ Icon, text, to = '#', onClick, noActiveStyle = false 
 
   return (
     <NavLink to={to} className={styles.link} activeStyle={activeStyle} onClick={onClick}>
-      <Box pl={3} pr={3}>
-        <ListItem>
-          <ListItemIcon>{Icon}</ListItemIcon>
-          <ListItemText primary={text} />
-        </ListItem>
+      <Box pl={5} pr={3} pt={1} pb={1} className={styles.box}>
+        <ListItemIcon>{Icon}</ListItemIcon>
+        <ListItemText primary={text} />
       </Box>
     </NavLink>
   )

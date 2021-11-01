@@ -14,7 +14,8 @@
     "ts-check": "yarn tsc --project ./tsconfig.json",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx . --cache --ignore-path .gitignore",
     "lint:fix": "yarn lint --fix",
-    "codegen": "graphql-codegen --config codegen.yml"
+    "codegen": "cd ./packages/client && yarn codegen",
+    "newclean": "find . | grep /node_modules$ | grep -v /node_modules/ | xargs rm -fR \\; &&  yarn cache clean && yarn"
   },
   "husky": {
     "hooks": {

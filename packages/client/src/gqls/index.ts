@@ -62,10 +62,7 @@ export const GET_BINANCE_CACHED_LAST_PRICE = gql`
 export const BINANCE_BALANCE_UPDATE_SUBSCRIPTION = gql`
   subscription binanceBalanceUpdate {
     binanceBalanceUpdate {
-      asset
-      clearTime
-      delta
-      eventTime
+      timestamp
     }
   }
 `
@@ -73,11 +70,7 @@ export const BINANCE_BALANCE_UPDATE_SUBSCRIPTION = gql`
 export const BINANCE_ORDER_UPDATE_SUBSCRIPTION = gql`
   subscription binanceOrderUpdate {
     binanceOrderUpdate {
-      eventTime
-      orderId
-      side
-      symbol
-      transactionTime
+      timestamp
     }
   }
 `
@@ -398,7 +391,10 @@ export const GET_BINANCE_SYMBOLS = gql`
     getBinanceSymbols(limit: 100000, filter: { quoteAsset: $quoteAsset }) {
       symbol
       baseAsset
+      baseAssetPrecision
       quoteAsset
+      quoteAssetPrecision
+      quotePrecision
       filters
       ocoAllowed
     }
@@ -430,28 +426,16 @@ export const GET_BINANCE_ORDERS = gql`
 `
 
 export const CANCEL_BINANCE_ORDER = gql`
-  mutation CancelBinanceOrder($symbol: String!, $orderId: Int!, $origClientOrderId: String) {
+  mutation CancelBinanceOrder($symbol: String!, $orderId: Float!, $origClientOrderId: String) {
     cancelBinanceOrder(symbol: $symbol, orderId: $orderId, origClientOrderId: $origClientOrderId) {
-      clientOrderId
-      cummulativeQuoteQty
-      executedQty
-      orderId
-      orderListId
-      origClientOrderId
-      origQty
-      price
-      side
       status
-      symbol
-      timeInForce
-      type
     }
   }
 `
 
 export const REFRESH_BINANCE_TRADES = gql`
-  mutation refreshBinanceTrades {
-    refreshBinanceTrades
+  mutation RefreshBinanceTrades($force: Boolean) {
+    refreshBinanceTrades(force: $force)
   }
 `
 
@@ -503,5 +487,11 @@ export const GET_BINANCE_PROFILE = gql`
       }
       updatedAt
     }
+  }
+`
+
+export const GET_BINANCE_INVESTED_AMOUNT = gql`
+  query GetBinanceInvestedAmount {
+      getBinanceInvestedAmount
   }
 `

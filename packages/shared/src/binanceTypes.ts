@@ -162,3 +162,85 @@ export type NewOrderResponseFull = {
     commissionAsset: string
   }>
 }
+
+export type DepositHistory = Array<{
+  "amount":string
+  "coin":string
+  "network":string
+  "status":number
+  "address":string
+  "addressTag":string
+  "txId":string
+  "insertTime":number
+  "transferType":number
+  "unlockConfirm":string
+  "confirmTimes":string
+}>
+
+export type WithdrawHistory = Array<{
+  "address": string
+  "amount": string
+  "applyTime": string
+  "coin": string
+  "id": string
+  "withdrawOrderId": string
+  "network": string
+  "transferType": number
+  "status": number
+  "transactionFee": string
+  "confirmNo":number
+  "txId": string
+}>
+
+export type FiatOrderHistory = {
+  "code": string
+  "message": string
+  "data": Array<
+    {
+      "orderNo":string
+      "fiatCurrency": string
+      "indicatedAmount": string
+      "amount": string
+      "totalFee": string
+      "method": string
+      "status": string  // Processing, Failed, Successful, Finished, Refunding, Refunded, Refund Failed, Order Partial credit Stopped
+      "createTime": number
+      "updateTime": number
+    }
+  >
+  "total": number
+  "success": boolean
+}
+
+export type FiatPaymentHistory = {
+  "code": string
+  "message": string
+  "data": Array<{
+    "orderNo": string
+    "sourceAmount": string
+    "fiatCurrency": string
+    "obtainAmount": string
+    "cryptoCurrency": string
+    "totalFee": string
+    "price": string
+    "status": string
+    "createTime": 1624529919000,
+    "updateTime": 1624529919000
+  }>
+  "total": number
+  "success": boolean
+}
+
+export type UniversalTransferHistory = {
+  "total":number
+  "rows":Array<
+    {
+      "asset":string
+      "amount":string
+      "type":string
+      "status": string
+      "tranId": number
+      "timestamp":number
+    }
+  >
+}

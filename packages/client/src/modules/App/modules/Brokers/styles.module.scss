@@ -1,16 +1,33 @@
 $squareSize: 30px;
 
 .container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
+  //display: flex;
+  //flex-wrap: wrap;
+  //align-items: center;
+  //justify-content: flex-start;
+  //margin-left: -3px;
+  //margin-right: -3px;
+  //margin-top: -3px;
 
   .grid {
-    display: grid;
-    grid-template-columns:  25% 25% 25% 25%;
-    column-gap: 5px;
-    row-gap: 5px;
+    //display: grid;
+    //grid-template-columns:  25% 25% 25% 25%;
+    //column-gap: 5px;
+    //row-gap: 5px;
+    margin-left: -3px;
+    margin-right: -3px;
+    margin-top: -6px;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+
+    & > * {
+      margin-left: 3px;
+      margin-right: 3px;
+      margin-top: 6px;
+    }
 
 
     a {

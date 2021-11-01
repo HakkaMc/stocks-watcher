@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Box, IconButton, Typography, Button } from '@material-ui/core'
+import { Box, IconButton, Typography } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
-import { useQuery, useLazyQuery, useSubscription, useMutation } from '@apollo/client'
-import { BinanceTrade } from '@sw/shared/src/graphql'
+import { useQuery, useSubscription, useMutation } from '@apollo/client'
 import { FormattedDate, FormattedTime } from 'react-intl'
 
 import styles from './styles.module.scss'
@@ -11,6 +10,9 @@ import { BinanceRow } from './modules/BinanceRow'
 import { BINANCE_BALANCE_UPDATE_SUBSCRIPTION, GET_BINANCE_TRADES, REFRESH_BINANCE_TRADES } from '../../gqls'
 import { dispatchers } from '../../redux'
 import { Label } from '../../components'
+import { RefreshBinanceTrades, RefreshBinanceTradesVariables} from '../../types/graphql/generated/RefreshBinanceTrades'
+import { BinanceTrades, BinanceTradesVariables } from '../../types/graphql/generated/BinanceTrades'
+import { SortFindManyBinanceTradeInput } from "../../types/graphql/generated/globalTypes";
 
 export const Trades = () => {
   const modalLoaderId = 'BINANCE_TRADES'
@@ -18,19 +20,22 @@ export const Trades = () => {
   const [lastDbUpdate, setLastDbUpdate] = useState(-1)
   const [refreshingDb, setRefreshingDb] = useState(false)
 
-  const getBinanceTradesResponse = useQuery<{ getBinanceTrades: Array<BinanceTrade> }>(GET_BINANCE_TRADES, {
+  const getBinanceTradesResponse = useQuery<BinanceTrades, BinanceTradesVariables>(GET_BINANCE_TRADES, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     variables: {
       // sorts: [ { field: 'time', sort: 'DESC' } ],
-      sort: 'TIME_DESC',
+      sort: SortFindManyBinanceTradeInput.TIME_DESC,
       limit: 50
     }
   })
 
-  const [resfreshBinanceTrades] = useMutation<{ refreshBinanceTrades: string }>(REFRESH_BINANCE_TRADES, {
+  const [resfreshBinanceTrades] = useMutation<RefreshBinanceTrades, RefreshBinanceTradesVariables>(REFRESH_BINANCE_TRADES, {
     fetchPolicy: 'no-cache',
-    notifyOnNetworkStatusChange: true
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      force: true
+    }
   })
 
   const binanceBalanceUpdateResponse = useSubscription(BINANCE_BALANCE_UPDATE_SUBSCRIPTION)
@@ -106,7 +111,7 @@ export const Trades = () => {
                 <th>Asset</th>
                 <th>Price per share</th>
                 <th>Quantity</th>
-                <th>Price</th>
+                <th>Value</th>
                 <th>Comission</th>
                 <th>Trade ID</th>
                 <th>Order ID</th>

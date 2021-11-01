@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 import { Box, IconButton, Typography } from '@material-ui/core'
 import { grey } from '@material-ui/core/colors'
 import { useQuery, useSubscription } from '@apollo/client'
-import { BinanceOcoOrderUpdate, BinanceOrderUpdate } from '@sw/shared/src/graphql'
+import { BinanceOcoOrderUpdate, Subscription } from '@sw/shared/src/graphql'
 
 import { RefreshIcon } from '../../utils/icons'
 import {
@@ -31,7 +31,7 @@ export const Orders = () => {
     notifyOnNetworkStatusChange: true
   })
 
-  const binanceOrderUpdateResponse = useSubscription<{ binanceOrderUpdate: BinanceOrderUpdate }>(
+  const binanceOrderUpdateResponse = useSubscription<Subscription['binanceOrderUpdate']>(
     BINANCE_ORDER_UPDATE_SUBSCRIPTION
   )
 
@@ -60,9 +60,9 @@ export const Orders = () => {
     refresh()
   }, [binanceOcoOrderUpdateResponse.data])
 
-  console.log(getBinanceOrdersResponse.error, getBinanceOrdersResponse.data)
-  console.log(getOrdersResponse.error, getOrdersResponse.data)
-  console.log('binanceOrderUpdateResponse: ', binanceOrderUpdateResponse)
+  // console.log(getBinanceOrdersResponse.error, getBinanceOrdersResponse.data)
+  // console.log(getOrdersResponse.error, getOrdersResponse.data)
+  // console.log('binanceOrderUpdateResponse: ', binanceOrderUpdateResponse)
 
   return (
     <>

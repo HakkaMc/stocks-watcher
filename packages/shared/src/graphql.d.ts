@@ -46,23 +46,6 @@ export type BinanceBalanceUpdate = {
   clearTime: Scalars['Int']
 }
 
-export type BinanceExchangeInformation = {
-  __typename?: 'BinanceExchangeInformation'
-  symbol: Scalars['String']
-  baseAsset: Scalars['String']
-  quoteAsset: Scalars['String']
-  filters: Scalars['JSON']
-  ocoAllowed: Scalars['Boolean']
-}
-
-export type BinanceFill = {
-  __typename?: 'BinanceFill'
-  price: Scalars['Float']
-  qty: Scalars['Float']
-  commission: Scalars['Float']
-  commissionAsset: Scalars['String']
-}
-
 export type BinanceLastPrice = {
   __typename?: 'BinanceLastPrice'
   symbol: Scalars['String']
@@ -72,24 +55,6 @@ export type BinanceLastPrice = {
   diff: Scalars['Float']
   diffPercentage: Scalars['Float']
   timestamp: Scalars['Float']
-}
-
-export type BinanceNewOrderResponseFull = {
-  __typename?: 'BinanceNewOrderResponseFull'
-  symbol: Scalars['String']
-  orderId: Scalars['Int']
-  orderListId: Scalars['Int']
-  clientOrderId: Scalars['String']
-  transactTime: Scalars['Float']
-  price: Scalars['String']
-  origQty: Scalars['String']
-  executedQty: Scalars['String']
-  cummulativeQuoteQty: Scalars['String']
-  status: Scalars['String']
-  timeInForce: Scalars['String']
-  type: Scalars['String']
-  side: Scalars['String']
-  fills: Array<BinanceFill>
 }
 
 export type BinanceOcoOrderUpdate = {
@@ -121,13 +86,47 @@ export type BinanceOrder = {
   origQuoteOrderQty: Scalars['Float']
 }
 
-export type BinanceOrderUpdate = {
-  __typename?: 'BinanceOrderUpdate'
+export type BinanceProfile = {
+  __typename?: 'BinanceProfile'
+  user?: Maybe<Scalars['MongoID']>
+  lastBalanceHash?: Maybe<Scalars['String']>
+  lastBalanceData?: Maybe<Scalars['JSON']>
+  countedBalance: Array<Maybe<BinanceProfileCountedBalance>>
+  _id: Scalars['MongoID']
+  updatedAt?: Maybe<Scalars['Date']>
+  createdAt?: Maybe<Scalars['Date']>
+}
+
+export type BinanceProfileCountedBalance = {
+  __typename?: 'BinanceProfileCountedBalance'
+  asset: Scalars['String']
+  quantity: Scalars['Float']
+  amount: Scalars['Float']
+  averagePurchasePrice: Scalars['Float']
+  realizedProfit: Scalars['Float']
+  lastTradeTimestamp: Scalars['Float']
+  _id?: Maybe<Scalars['MongoID']>
+}
+
+export type BinanceSymbol = {
+  __typename?: 'BinanceSymbol'
   symbol: Scalars['String']
-  eventTime: Scalars['Int']
-  side: Scalars['String']
-  orderId: Scalars['Int']
-  transactionTime: Scalars['Int']
+  status: Scalars['String']
+  baseAsset: Scalars['String']
+  baseAssetPrecision: Scalars['Float']
+  quoteAsset: Scalars['String']
+  quotePrecision: Scalars['Float']
+  quoteAssetPrecision: Scalars['Float']
+  orderTypes: Array<Maybe<Scalars['String']>>
+  icebergAllowed: Scalars['Boolean']
+  ocoAllowed: Scalars['Boolean']
+  isSpotTradingAllowed: Scalars['Boolean']
+  isMarginTradingAllowed: Scalars['Boolean']
+  filters?: Maybe<Scalars['JSON']>
+  permissions: Array<Maybe<Scalars['String']>>
+  _id: Scalars['MongoID']
+  updatedAt?: Maybe<Scalars['Date']>
+  createdAt?: Maybe<Scalars['Date']>
 }
 
 export type BinanceTrade = {
@@ -199,6 +198,7 @@ export type CreateOneOrderInput = {
   quantity: Scalars['Float']
   quoteOrderQty: Scalars['Float']
   percent: Scalars['Float']
+  meta?: Maybe<Scalars['JSON']>
 }
 
 export type CreateOneOrderPayload = {
@@ -245,6 +245,44 @@ export enum EnumChartGroupLayout {
 
 export type ErrorInterface = {
   message?: Maybe<Scalars['String']>
+}
+
+export type FilterFindManyBinanceSymbolInput = {
+  symbol?: Maybe<Scalars['String']>
+  status?: Maybe<Scalars['String']>
+  baseAsset?: Maybe<Scalars['String']>
+  baseAssetPrecision?: Maybe<Scalars['Float']>
+  quoteAsset?: Maybe<Scalars['String']>
+  quotePrecision?: Maybe<Scalars['Float']>
+  quoteAssetPrecision?: Maybe<Scalars['Float']>
+  orderTypes?: Maybe<Array<Maybe<Scalars['String']>>>
+  icebergAllowed?: Maybe<Scalars['Boolean']>
+  ocoAllowed?: Maybe<Scalars['Boolean']>
+  isSpotTradingAllowed?: Maybe<Scalars['Boolean']>
+  isMarginTradingAllowed?: Maybe<Scalars['Boolean']>
+  filters?: Maybe<Scalars['JSON']>
+  permissions?: Maybe<Array<Maybe<Scalars['String']>>>
+  _id?: Maybe<Scalars['MongoID']>
+  updatedAt?: Maybe<Scalars['Date']>
+  createdAt?: Maybe<Scalars['Date']>
+  _operators?: Maybe<FilterFindManyBinanceSymbolOperatorsInput>
+  OR?: Maybe<Array<FilterFindManyBinanceSymbolInput>>
+  AND?: Maybe<Array<FilterFindManyBinanceSymbolInput>>
+}
+
+export type FilterFindManyBinanceSymbolOperatorsInput = {
+  _id?: Maybe<FilterFindManyBinanceSymbol_IdOperatorsInput>
+}
+
+export type FilterFindManyBinanceSymbol_IdOperatorsInput = {
+  gt?: Maybe<Scalars['MongoID']>
+  gte?: Maybe<Scalars['MongoID']>
+  lt?: Maybe<Scalars['MongoID']>
+  lte?: Maybe<Scalars['MongoID']>
+  ne?: Maybe<Scalars['MongoID']>
+  in?: Maybe<Array<Maybe<Scalars['MongoID']>>>
+  nin?: Maybe<Array<Maybe<Scalars['MongoID']>>>
+  exists?: Maybe<Scalars['Boolean']>
 }
 
 export type FilterFindManyBinanceTradeInput = {
@@ -301,6 +339,7 @@ export type FilterFindManyOrderInput = {
   quoteOrderQty?: Maybe<Scalars['Float']>
   activatedTimestamp?: Maybe<Scalars['Float']>
   percent?: Maybe<Scalars['Float']>
+  meta?: Maybe<Scalars['JSON']>
   _id?: Maybe<Scalars['MongoID']>
   updatedAt?: Maybe<Scalars['Date']>
   createdAt?: Maybe<Scalars['Date']>
@@ -393,6 +432,44 @@ export type FilterFindManySymbol_IdOperatorsInput = {
   exists?: Maybe<Scalars['Boolean']>
 }
 
+export type FilterFindOneBinanceProfileCountedBalanceInput = {
+  asset?: Maybe<Scalars['String']>
+  quantity?: Maybe<Scalars['Float']>
+  amount?: Maybe<Scalars['Float']>
+  averagePurchasePrice?: Maybe<Scalars['Float']>
+  realizedProfit?: Maybe<Scalars['Float']>
+  lastTradeTimestamp?: Maybe<Scalars['Float']>
+  _id?: Maybe<Scalars['MongoID']>
+}
+
+export type FilterFindOneBinanceProfileInput = {
+  user?: Maybe<Scalars['MongoID']>
+  lastBalanceHash?: Maybe<Scalars['String']>
+  lastBalanceData?: Maybe<Scalars['JSON']>
+  countedBalance?: Maybe<Array<Maybe<FilterFindOneBinanceProfileCountedBalanceInput>>>
+  _id?: Maybe<Scalars['MongoID']>
+  updatedAt?: Maybe<Scalars['Date']>
+  createdAt?: Maybe<Scalars['Date']>
+  _operators?: Maybe<FilterFindOneBinanceProfileOperatorsInput>
+  OR?: Maybe<Array<FilterFindOneBinanceProfileInput>>
+  AND?: Maybe<Array<FilterFindOneBinanceProfileInput>>
+}
+
+export type FilterFindOneBinanceProfileOperatorsInput = {
+  _id?: Maybe<FilterFindOneBinanceProfile_IdOperatorsInput>
+}
+
+export type FilterFindOneBinanceProfile_IdOperatorsInput = {
+  gt?: Maybe<Scalars['MongoID']>
+  gte?: Maybe<Scalars['MongoID']>
+  lt?: Maybe<Scalars['MongoID']>
+  lte?: Maybe<Scalars['MongoID']>
+  ne?: Maybe<Scalars['MongoID']>
+  in?: Maybe<Array<Maybe<Scalars['MongoID']>>>
+  nin?: Maybe<Array<Maybe<Scalars['MongoID']>>>
+  exists?: Maybe<Scalars['Boolean']>
+}
+
 export type GetPrices = {
   __typename?: 'GetPrices'
   priceArray?: Maybe<Array<Maybe<PriceTimestampArray>>>
@@ -438,9 +515,10 @@ export type Mutation = {
   setReminder?: Maybe<Scalars['String']>
   removeReminder?: Maybe<Scalars['String']>
   cancelOrder: Scalars['String']
-  setTrailingStopOrder: Scalars['String']
-  setMovingBuyOrder: Scalars['String']
   setOrder?: Maybe<CreateOneOrderPayload>
+  setBinanceSellOrder: Scalars['String']
+  setBinanceBuyOrder: Scalars['String']
+  cancelBinanceOrder: Array<CancelBinanceOrder>
   refreshBinanceTrades: Scalars['String']
 }
 
@@ -516,28 +594,32 @@ export type MutationCancelOrderArgs = {
   orderId: Scalars['String']
 }
 
-export type MutationSetTrailingStopOrderArgs = {
-  symbol: Scalars['String']
-  activateOnPrice: Scalars['Float']
-  sellOnPrice: Scalars['Float']
-  priceType: Scalars['String']
-  quantityType: Scalars['String']
-  quantity: Scalars['Float']
-  quoteOrderQty: Scalars['Float']
-}
-
-export type MutationSetMovingBuyOrderArgs = {
-  symbol: Scalars['String']
-  activateOnPrice: Scalars['Float']
-  percent: Scalars['Float']
-  priceType: Scalars['String']
-  quantityType: Scalars['String']
-  quantity: Scalars['Float']
-  quoteOrderQty: Scalars['Float']
-}
-
 export type MutationSetOrderArgs = {
   record: CreateOneOrderInput
+}
+
+export type MutationSetBinanceSellOrderArgs = {
+  symbol: Scalars['String']
+  priceType: Scalars['String']
+  price: Scalars['Float']
+  quantityType: Scalars['String']
+  quantity: Scalars['Float']
+  quoteOrderQty: Scalars['Float']
+}
+
+export type MutationSetBinanceBuyOrderArgs = {
+  symbol: Scalars['String']
+  priceType: Scalars['String']
+  price: Scalars['Float']
+  quantityType: Scalars['String']
+  quantity: Scalars['Float']
+  quoteOrderQty: Scalars['Float']
+}
+
+export type MutationCancelBinanceOrderArgs = {
+  symbol: Scalars['String']
+  orderId?: Maybe<Scalars['Int']>
+  origClientOrderId?: Maybe<Scalars['String']>
 }
 
 export type Note = {
@@ -564,6 +646,7 @@ export type Order = {
   quoteOrderQty: Scalars['Float']
   activatedTimestamp: Scalars['Float']
   percent: Scalars['Float']
+  meta?: Maybe<Scalars['JSON']>
   _id: Scalars['MongoID']
   updatedAt?: Maybe<Scalars['Date']>
   createdAt?: Maybe<Scalars['Date']>
@@ -599,14 +682,13 @@ export type Query = {
   getNote?: Maybe<Note>
   getPriceAlerts?: Maybe<Array<Maybe<PriceAlert>>>
   getReminders?: Maybe<Array<Maybe<Reminder>>>
-  setBinanceSellOrder?: Maybe<BinanceNewOrderResponseFull>
-  setBinanceBuyOrder?: Maybe<BinanceNewOrderResponseFull>
   getBinanceAccountInformation?: Maybe<BinanceAccountInformation>
-  getBinanceExchangeInformation: Array<BinanceExchangeInformation>
   getBinanceOrders: Array<BinanceOrder>
-  cancelBinanceOrder: Array<CancelBinanceOrder>
+  getBinanceCachedLastPrice: BinanceLastPrice
   getOrders: Array<Order>
   getBinanceTrades: Array<BinanceTrade>
+  getBinanceSymbols: Array<BinanceSymbol>
+  getBinanceProfile?: Maybe<BinanceProfile>
 }
 
 export type QueryFindSymbolsArgs = {
@@ -639,28 +721,8 @@ export type QueryGetPriceAlertsArgs = {
   symbol: Scalars['String']
 }
 
-export type QuerySetBinanceSellOrderArgs = {
+export type QueryGetBinanceCachedLastPriceArgs = {
   symbol: Scalars['String']
-  priceType: Scalars['String']
-  price: Scalars['Float']
-  quantityType: Scalars['String']
-  quantity: Scalars['Float']
-  quoteOrderQty: Scalars['Float']
-}
-
-export type QuerySetBinanceBuyOrderArgs = {
-  symbol: Scalars['String']
-  priceType: Scalars['String']
-  price: Scalars['Float']
-  quantityType: Scalars['String']
-  quantity: Scalars['Float']
-  quoteOrderQty: Scalars['Float']
-}
-
-export type QueryCancelBinanceOrderArgs = {
-  symbol: Scalars['String']
-  orderId?: Maybe<Scalars['Int']>
-  origClientOrderId?: Maybe<Scalars['String']>
 }
 
 export type QueryGetOrdersArgs = {
@@ -675,6 +737,19 @@ export type QueryGetBinanceTradesArgs = {
   skip?: Maybe<Scalars['Int']>
   limit?: Maybe<Scalars['Int']>
   sort?: Maybe<SortFindManyBinanceTradeInput>
+}
+
+export type QueryGetBinanceSymbolsArgs = {
+  filter?: Maybe<FilterFindManyBinanceSymbolInput>
+  skip?: Maybe<Scalars['Int']>
+  limit?: Maybe<Scalars['Int']>
+  sort?: Maybe<SortFindManyBinanceSymbolInput>
+}
+
+export type QueryGetBinanceProfileArgs = {
+  filter?: Maybe<FilterFindOneBinanceProfileInput>
+  skip?: Maybe<Scalars['Int']>
+  sort?: Maybe<SortFindOneBinanceProfileInput>
 }
 
 export type Reminder = {
@@ -692,6 +767,11 @@ export type Reminder = {
 export type RuntimeError = ErrorInterface & {
   __typename?: 'RuntimeError'
   message?: Maybe<Scalars['String']>
+}
+
+export enum SortFindManyBinanceSymbolInput {
+  IdAsc = '_ID_ASC',
+  IdDesc = '_ID_DESC'
 }
 
 export enum SortFindManyBinanceTradeInput {
@@ -719,12 +799,17 @@ export enum SortFindManySymbolInput {
   SymbolDesc = 'SYMBOL_DESC'
 }
 
+export enum SortFindOneBinanceProfileInput {
+  IdAsc = '_ID_ASC',
+  IdDesc = '_ID_DESC'
+}
+
 export type Subscription = {
   __typename?: 'Subscription'
   lastPrice?: Maybe<LastPrice>
-  binanceLastPrice?: Maybe<BinanceLastPrice>
+  binanceLastPrice: BinanceLastPrice
   binanceBalanceUpdate?: Maybe<BinanceBalanceUpdate>
-  binanceOrderUpdate?: Maybe<BinanceOrderUpdate>
+  binanceOrderUpdate: Scalars['Int']
   binanceOcoOrderUpdate?: Maybe<BinanceOcoOrderUpdate>
 }
 

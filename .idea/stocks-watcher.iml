@@ -11,5 +11,6 @@
     <orderEntry type="library" name="formatjs" level="project" />
     <orderEntry type="library" name="react" level="project" />
     <orderEntry type="library" name="node_modules" level="project" />
+    <orderEntry type="library" name="react-icons" level="project" />
   </component>
 </module>

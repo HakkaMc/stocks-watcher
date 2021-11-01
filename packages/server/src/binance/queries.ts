@@ -1,6 +1,13 @@
 import { BinanceAccountInformation, BinanceOrder, BinanceTrade } from '@sw/shared/src/graphql'
 import { ReturnPromise } from '../types'
 import { binanceQuery } from './api'
+import {
+  DepositHistory,
+  FiatOrderHistory,
+  FiatPaymentHistory,
+  UniversalTransferHistory
+} from "@sw/shared/src/binanceTypes";
+import { isDollarAsset } from "@sw/shared/src";
 
 export type Balance = {
   asset: string
@@ -29,7 +36,13 @@ const EPs = {
   symbolLatestPrice: '/api/v3/ticker/price',
   userDataStream: '/api/v3/userDataStream',
   testOrder: '/api/v3/order/test',
-  newOrder: '/api/v3/order'
+  newOrder: '/api/v3/order',
+  depositHistory: '/sapi/v1/capital/deposit/hisrec',
+  withdrawHistory: '/sapi/v1/capital/withdraw/history',
+  fundingHistory: '/sapi/v1/asset/get-funding-asset',
+  fiatOrderHistory: '/sapi/v1/fiat/orders',
+  fiatPaymentHistory: '/sapi/v1/fiat/payments',
+  universalTransferHistory: '/sapi/v1/asset/transfer'
 }
 
 const symbolToPriceMap: Record<string, number> = {}
@@ -555,7 +568,7 @@ export const cancelOrder = async (orderQuery: {
         return resolve({
           error: '',
           errorData: undefined,
-          data: response
+          data: response.data
         })
       },
       (error) => {
@@ -569,3 +582,273 @@ export const cancelOrder = async (orderQuery: {
       }
     )
   })
+
+export const getDepositHistory = async (): ReturnPromise => new Promise(async (resolve)=>{
+  const startTimestamp = new Date('2021-04-01 00:00')
+  const now = new Date()
+  const promises = []
+  const loopCount = Math.ceil(now.getDate()-startTimestamp.getDate()/90)
+
+  for(let i = 0; i<loopCount;i++){
+    const startTime = new Date(startTimestamp)
+    startTime.setDate(startTime.getDate()+(i===0?0:i*90+1))
+    const endTime = new Date(startTime)
+    endTime.setDate(endTime.getDate()+90)
+
+    promises.push(binanceQuery(
+      {
+        method: 'get',
+        url: EPs.depositHistory,
+        params: {
+          startTime: startTime.getTime(),
+          endTime: endTime.getTime()
+        }
+      },
+      true
+    ))
+  }
+
+  console.log('Deposit history: ')
+
+  await Promise.all(promises).then(async responses=>{
+    responses.forEach(response=>{
+      const data = response.data as DepositHistory
+
+      if(Array.isArray(data)){
+        data.forEach(item=>{
+          console.log(item.amount, item.coin, new Date(item.insertTime).toLocaleString(), item.status)
+        })
+      }
+    })
+  }, error=>{
+    console.log('GET_DEPOSIT_HISTORY_FAILED')
+    console.log(error)
+    return resolve({
+      error: 'GET_DEPOSIT_HISTORY_FAILED',
+      errorData: error,
+      data: undefined
+    })
+  })
+})
+
+export const getWithdrawHistory = async (): ReturnPromise => new Promise(async (resolve)=>{
+  binanceQuery(
+    {
+      method: 'get',
+      url: EPs.withdrawHistory
+    },
+    true
+  ).then(
+    async (response) => {
+      const data = response.data
+
+      console.log('Withdraw history: ')
+      console.log(data)
+
+      return resolve({ error: '', errorData: undefined, data })
+    },
+    (error) => {
+      console.log(error)
+      return resolve({
+        error: 'GET_WITHDRAW_HISTORY_FAILED',
+        errorData: error,
+        data: undefined
+      })
+    }
+  )
+})
+
+export const getFundingHistory = async (): ReturnPromise => new Promise(async (resolve)=>{
+  binanceQuery(
+    {
+      method: 'post',
+      url: EPs.fundingHistory
+    },
+    true
+  ).then(
+    async (response) => {
+      const data = response.data
+
+      console.log('Funding history: ')
+      console.log(data)
+
+      return resolve({ error: '', errorData: undefined, data })
+    },
+    (error) => {
+      console.log(error)
+      return resolve({
+        error: 'GET_FUNDING_HISTORY_FAILED',
+        errorData: error,
+        data: undefined
+      })
+    }
+  )
+})
+
+export const getFiatOrderHistory = async (): ReturnPromise => new Promise(async (resolve)=>{
+  const startTimestamp = new Date('2021-04-01 00:00')
+  const now = new Date()
+  const promises = []
+  const loopCount = Math.ceil(now.getDate()-startTimestamp.getDate()/90)
+
+  for(let i = 0; i<loopCount;i++) {
+    const startTime = new Date(startTimestamp)
+    startTime.setDate(startTime.getDate() + (i === 0 ? 0 : i * 90 + 1))
+    const endTime = new Date(startTime)
+    endTime.setDate(endTime.getDate() + 90)
+
+    promises.push(binanceQuery(
+      {
+        method: 'get',
+        url: EPs.fiatOrderHistory,
+        params: {
+          // TODO - call for both types
+          transactionType: '0', // 0-deposit,1-withdraw,
+          beginTime: startTime.getTime(),
+          endTime: endTime.getTime()
+        }
+      },
+      true))
+  }
+
+  await Promise.all(promises).then(async responses=>{
+    console.log('Fiat Order history: ')
+
+    responses.forEach(response=>{
+      const data = response.data as FiatOrderHistory
+
+      if(Array.isArray(data?.data)){
+        data.data.forEach(item=>{
+          if(item.status === 'Successful'){
+            console.log(item.amount, item.fiatCurrency, new Date(item.createTime).toLocaleString(), item.method)
+          }
+        })
+      }
+    })
+
+    return resolve({ error: '', errorData: undefined, data: '' })
+  }, error=>{
+    console.log('GET_FIAT_ORDER_HISTORY_FAILED')
+    console.log(error)
+    return resolve({
+      error: 'GET_FIAT_ORDER_HISTORY_FAILED',
+      errorData: error,
+      data: undefined
+    })
+  })
+})
+
+export const getFiatPaymentHistory = async (): ReturnPromise<number|undefined> => new Promise(async (resolve)=>{
+  const range = 30
+  const startTimestamp = new Date('2021-01-01 00:00')
+  const now = new Date()
+  const promises = []
+  const loopCount = Math.ceil(now.getDate()-startTimestamp.getDate()/range)
+
+  for(let i = 0; i<loopCount;i++) {
+    const startTime = new Date(startTimestamp)
+    startTime.setDate(startTime.getDate() + (i === 0 ? 0 : i * range + 1))
+    const endTime = new Date(startTime)
+    endTime.setDate(endTime.getDate() + range)
+
+    promises.push(binanceQuery(
+      {
+        method: 'get',
+        url: EPs.fiatPaymentHistory,
+        params: {
+          // TODO - call for both types
+          transactionType: '0', // 0-buy,1-sell
+          beginTime: startTime.getTime(),
+          endTime: endTime.getTime(),
+          rows: 500,
+          recvWindow: 60000,
+        }
+      },
+      true))
+  }
+
+  await Promise.all(promises).then(async responses=>{
+    console.log('Fiat Payment history: ')
+
+    let amount = 0
+
+    responses.forEach(response=>{
+      const data = response.data as FiatPaymentHistory
+      if(data?.data){
+
+        data.data.sort((a,b)=>a.createTime-b.createTime).forEach(payment=>{
+          if(payment.status === 'Completed') {
+            console.log(new Date(payment.createTime).toLocaleString(),  payment.sourceAmount, payment.totalFee, payment.fiatCurrency, payment.obtainAmount, payment.cryptoCurrency, payment.price, parseFloat(payment.sourceAmount) / parseFloat(payment.price), payment.cryptoCurrency)
+          }
+          if(payment.status === 'Completed' && isDollarAsset(payment.cryptoCurrency)){
+            amount += parseFloat(payment.sourceAmount) / parseFloat(payment.price)
+          }
+        })
+      }
+    })
+
+    console.log('Sum: ', amount, '$')
+
+    return resolve({ error: '', errorData: undefined, data: amount })
+  }, error=>{
+    console.log('GET_FIAT_PAYMENT_HISTORY_FAILED')
+    console.log(error)
+    return resolve({
+      error: 'GET_FIAT_PAYMENT_HISTORY_FAILED',
+      errorData: error,
+      data: undefined
+    })
+  })
+})
+
+export const getUniversalTransferHistory = async (): ReturnPromise => new Promise(async (resolve)=>{
+  const startTimestamp = new Date('2021-04-01 00:00')
+  const now = new Date()
+  const promises = []
+  const loopCount = Math.ceil(now.getDate()-startTimestamp.getDate()/90)
+
+  for(let i = 0; i<loopCount;i++){
+    const startTime = new Date(startTimestamp)
+    startTime.setDate(startTime.getDate()+(i===0?0:i*90+1))
+    const endTime = new Date(startTime)
+    endTime.setDate(endTime.getDate()+90)
+
+    promises.push(binanceQuery(
+      {
+        method: 'get',
+        url: EPs.universalTransferHistory,
+        params: {
+          startTime: startTime.getTime(),
+          endTime: endTime.getTime(),
+          size: 100,
+          type: 'FUNDING_MAIN' //MAIN_FUNDING,FUNDING_MAIN,FUNDING_UMFUTURE,UMFUTURE_FUNDING,MARGIN_FUNDING,FUNDING_MARGIN,FUNDING_CMFUTURE, CMFUTURE_FUNDING
+        }
+      },
+      true
+    ))
+  }
+
+  await Promise.all(promises).then(async responses=>{
+    console.log('Universal transfer history: ')
+
+    responses.forEach(response=>{
+      const data = response.data as UniversalTransferHistory
+
+      if(Array.isArray(data.rows)){
+        data.rows.forEach(item=>{
+          console.log(item.amount, item.asset, new Date(item.timestamp).toLocaleString(), item.status)
+        })
+      }
+    })
+
+    return resolve({ error: '', errorData: undefined, data: '' })
+  }, error=>{
+    console.log('GET_UNIVERSAL_TRANSFER_HISTORY_FAILED')
+    console.log(error)
+    return resolve({
+      error: 'GET_UNIVERSAL_TRANSFER_HISTORY_FAILED',
+      errorData: error,
+      data: undefined
+    })
+  })
+})

@@ -40,6 +40,14 @@
       }
     }
 
+    thead{
+      tr{
+        th:first-child{
+          text-align: left;
+        }
+      }
+    }
+
     tbody {
       tr {
         &:nth-child(2n) {
@@ -76,4 +84,20 @@
       }
     }
   }
+}
+
+.green {
+  color: green;
+}
+
+.orange {
+  color: orange;
+}
+
+.red {
+  color: red;
+}
+
+.noUnderline {
+  text-decoration-line: none;
 }

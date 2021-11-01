@@ -17,6 +17,8 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
   if (!register.exists(order._id.toString())) {
     const orderId = order._id.toString()
 
+    console.log('start processFixedTrailingStopOrder ', order.symbol)
+
     const user = await UserTsModel.findOne({ _id: order.user }, { _id: true, email: true })
     const userEmail = user?.email || ''
 
@@ -40,7 +42,8 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
       }
       if (!(lastAveragePriceResult.data > order.sellOnPrice * 1.05)) {
         // TODO - send notif error
-        await OrderTsModel.findByIdAndUpdate(order._id, { active: false })
+        console.log('processFixedTrailingStopOrder - Too late to process order ', order.symbol)
+        await OrderTsModel.updateOne({ _id: order._id }, { active: false })
         return console.log(order.symbol, ' Process order - Too late to process order. Order deactivated.')
       }
     }
@@ -61,9 +64,21 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
     const subscribeNumber = await pubSub.subscribe(
       `BINANCE_LAST_PRICE_${order.symbol}`,
       async (lastPrice: BinanceLastPrice) => {
+        meta.locked = true
+
         // console.log(
         //   `${order.symbol}, a/m/b: ${lastPrice.ask}/${lastPrice.middle}/${lastPrice.bid}, actOnP: ${order.fixedTrailingStop.activateOnPrice}, sellOnP: ${order.fixedTrailingStop.sellOnPrice}, activated: ${meta.activated}, locked: ${meta.locked}`
         // )
+
+        console.log(
+          'processFixedTrailingStopOrder',
+          order.symbol,
+          lastPrice.bid,
+          order.activateOnPrice,
+          order.sellOnPrice,
+          `destroy: ${meta.destroy}`,
+          `activated: ${meta.activated}`
+        )
 
         if (meta.destroy) {
           meta.remove()
@@ -73,8 +88,6 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
           meta.specificData.high = Math.max(meta.specificData.high, lastPrice.bid)
 
           if (!meta.locked && lastPrice.bid <= order.sellOnPrice && meta.specificData.high >= order.sellOnPrice) {
-            meta.locked = true
-
             const lastAveragePriceResult = await getSymbolAveragePrice(order.symbol)
 
             // console.log(lastAveragePriceResult.data, order.fixedTrailingStop.sellOnPrice, order.fixedTrailingStop.sellOnPrice * 1.05)
@@ -134,7 +147,7 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
                   sendEmail(userEmail, `${order.symbol} Trailing stop placed`)
 
                   // TODO - send notification order placed
-                  OrderTsModel.findByIdAndUpdate(order._id, { active: false }, {}, (error) => {
+                  OrderTsModel.updateOne({ _id: order._id }, { active: false }, {}, (error) => {
                     if (error) {
                       console.log(error)
                     } else {
@@ -143,15 +156,21 @@ const processFixedTrailingStopOrder = async (order: OrderTsType) => {
                   })
                 }
               } else {
+                console.log(order.symbol, 'FIXED TRAILING STOP: actual average price: ', lastAveragePriceResult.data, ' sell on price: ', order.sellOnPrice)
                 meta.locked = false
               }
             } else {
               meta.remove()
             }
+          } else {
+            meta.locked = false
           }
         } else if (lastPrice.bid > order.activateOnPrice) {
+          await OrderTsModel.updateOne({ _id: order._id }, { activatedTimestamp: Date.now() })
           meta.activated = true
-          OrderTsModel.findByIdAndUpdate(order._id, { fixedTrailingStop: { activatedTimestamp: Date.now() } } as any)
+          meta.locked = false
+        } else {
+          meta.locked = false
         }
       }
     )
@@ -185,6 +204,8 @@ const processMovingTrailingStopOrder = async (order: OrderTsType) => {
     const subscribeNumber = await pubSub.subscribe(
       `BINANCE_LAST_PRICE_${order.symbol}`,
       async (lastPrice: BinanceLastPrice) => {
+        meta.locked = true
+
         // console.log(
         //   `${order.symbol}, a/m/b: ${lastPrice.ask}/${lastPrice.middle}/${lastPrice.bid}, actOnP: ${order.fixedTrailingStop.activateOnPrice}, sellOnP: ${order.fixedTrailingStop.sellOnPrice}, activated: ${meta.activated}, locked: ${meta.locked}`
         // )
@@ -196,27 +217,31 @@ const processMovingTrailingStopOrder = async (order: OrderTsType) => {
 
           meta.specificData.high = Math.max(meta.specificData.high, lastPrice.bid)
 
-          const sellLevel = meta.specificData.high * ((100 - order.percent) / 100)
-
           const lowestLevel = order.activateOnPrice * ((100 - order.percent) / 100)
 
+          const sellLevel = meta.specificData.high * ((100 - order.percent) / 100)
+
           // console.log(
+          //   'MTSO - ',
           //   order.symbol,
           //   ' high: ',
           //   meta.specificData.high,
-          //   ', sell level: ',
-          //   sellLevel,
           //   ', last P: ',
-          //   lastPrice.ask
+          //   lastPrice.bid,
+          //   ', lowest level: ',
+          //   lowestLevel,
+          //   ', sell level: ',
+          //   sellLevel
           // )
 
-          if (!meta.locked && lastPrice.bid <= sellLevel && meta.specificData.high >= lowestLevel) {
-            meta.locked = true
-
+          if (
+            !meta.locked &&
+            lastPrice.bid <= sellLevel &&
+            meta.specificData.high >= lowestLevel &&
+            sellLevel >= lowestLevel
+          ) {
             // Ensure the websocket price is not just a single hype
             const lastAveragePriceResult = await getSymbolAveragePrice(order.symbol)
-
-            // console.log(lastAveragePriceResult.data, order.fixedTrailingStop.sellOnPrice, order.fixedTrailingStop.sellOnPrice * 1.05)
 
             if (lastAveragePriceResult.error) {
               meta.locked = false
@@ -246,6 +271,17 @@ const processMovingTrailingStopOrder = async (order: OrderTsType) => {
               )
             }
 
+            console.log(
+              'MTSO - ',
+              order.symbol,
+              'last average price: ',
+              lastAveragePriceResult.data,
+              ', lowest level: ',
+              lowestLevel,
+              ', sell level ',
+              sellLevel
+            )
+
             const refreshedOrder = await OrderTsModel.findById(order._id)
 
             if (refreshedOrder?.active) {
@@ -273,7 +309,7 @@ const processMovingTrailingStopOrder = async (order: OrderTsType) => {
                   sendEmail(userEmail, `${order.symbol} Moving trailing stop placed`)
 
                   // TODO - send notification order placed
-                  OrderTsModel.findByIdAndUpdate(order._id, { active: false }, {}, (error) => {
+                  OrderTsModel.updateOne({ _id: order._id }, { active: false }, {}, (error) => {
                     if (error) {
                       console.log(error)
                     } else {
@@ -287,7 +323,11 @@ const processMovingTrailingStopOrder = async (order: OrderTsType) => {
             } else {
               meta.remove()
             }
+          } else {
+            meta.locked = false
           }
+        } else {
+          meta.locked = false
         }
       }
     )
@@ -321,6 +361,7 @@ const processMovingBuyOrder = async (order: OrderTsType) => {
     const subscribeNumber = await pubSub.subscribe(
       `BINANCE_LAST_PRICE_${order.symbol}`,
       async (lastPrice: BinanceLastPrice) => {
+        meta.locked = true
         // console.log(
         //   `${order.symbol}, a/m/b: ${lastPrice.ask}/${lastPrice.middle}/${lastPrice.bid}, actOnP: ${order.fixedTrailingStop.activateOnPrice}, sellOnP: ${order.fixedTrailingStop.sellOnPrice}, activated: ${meta.activated}, locked: ${meta.locked}`
         // )
@@ -345,8 +386,6 @@ const processMovingBuyOrder = async (order: OrderTsType) => {
           )
 
           if (!meta.locked && lastPrice.ask >= buyLevel && buyLevel < order.activateOnPrice) {
-            meta.locked = true
-
             const lastAveragePriceResult = await getSymbolAveragePrice(order.symbol)
             // console.log(lastAveragePriceResult.data, order.fixedTrailingStop.sellOnPrice, order.fixedTrailingStop.sellOnPrice * 1.05)
 
@@ -405,7 +444,7 @@ const processMovingBuyOrder = async (order: OrderTsType) => {
                   sendEmail(userEmail, `${order.symbol} Moving buy placed`)
 
                   // TODO - send notification order placed
-                  OrderTsModel.findByIdAndUpdate(order._id, { active: false }, {}, (error) => {
+                  OrderTsModel.updateOne({ _id: order._id }, { active: false }, {}, (error) => {
                     if (error) {
                       console.log(error)
                     } else {
@@ -419,7 +458,11 @@ const processMovingBuyOrder = async (order: OrderTsType) => {
             } else {
               meta.remove()
             }
+          } else {
+            meta.locked = false
           }
+        } else {
+          meta.locked = false
         }
       }
     )
@@ -431,6 +474,8 @@ const processMovingBuyOrder = async (order: OrderTsType) => {
 }
 
 const processOrder = async (order: OrderTsType) => {
+  console.log('processOrder ', order.symbol, order.type)
+
   switch (order.type) {
     case OrderType.FIXED_TRAILING_STOP:
       processFixedTrailingStopOrder(order)
@@ -453,7 +498,7 @@ const processOrder = async (order: OrderTsType) => {
 }
 
 export const computeOrders = async () => {
-  const orders = await OrderTsModel.find({ active: true })
+  const orders = await OrderTsModel.find({ active: true, user: { $exists: true } })
 
   if (Array.isArray(orders)) {
     orders.forEach((order) => {
@@ -484,7 +529,9 @@ export const closeOrder = async (orderId: string, userId: string): ReturnPromise
         })
       }
 
-      register.destroy(orderId)
+      const orderObj = register.destroy(orderId)
+
+      console.log('closedOrder: ', orderObj)
 
       return resolve({
         error: '',

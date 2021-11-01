@@ -2,6 +2,7 @@ import {
   FilterType,
   LotSize,
   NewOrderRespType,
+  NewOrderResponseFull,
   OrderType,
   PriceFilter,
   PriceType,
@@ -9,7 +10,7 @@ import {
   Side,
   TimeInForce
 } from '@sw/shared/src/binanceTypes'
-import { BinanceNewOrderResponseFull } from '@sw/shared/src/graphql'
+// import { BinanceNewOrderResponseFull } from '@sw/shared/src/graphql'
 import { getAccountInfo, getExchangeInfo, getSymbolAveragePrice, placeOrder } from './queries'
 import { ReturnPromise } from '../types'
 import { BinanceSymbolTsModel } from '../database/binanceSymbol/schema'
@@ -31,7 +32,7 @@ const enhanceQuantity = (quantity: string | number, lotSize: LotSize): number =>
   }
 
   if (lotSize.stepSize > 0) {
-    const multiplier = parseInt((numericQuantity / lotSize.stepSize).toFixed(0))
+    const multiplier = Math.floor(numericQuantity / lotSize.stepSize)
     const countedValue = parseFloat((lotSize.stepSize * multiplier).toFixed(8))
 
     return countedValue
@@ -57,7 +58,7 @@ const enhancePrice = (price: string | number, priceFilter: PriceFilter): number 
   return numericPrice
 }
 
-export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromise<BinanceNewOrderResponseFull> =>
+export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromise<NewOrderResponseFull> =>
   new Promise(async (resolve, reject) => {
     const exchangeInfo = await BinanceSymbolTsModel.findOne({ symbol: params.symbol })
 
@@ -79,7 +80,7 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
     }
 
     switch (params.priceType) {
-      case PriceType.Price:
+      case PriceType.Price: {
         const countedPrice = enhancePrice(params.price, priceFilter)
 
         if (countedPrice < 0) {
@@ -89,12 +90,14 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
             data: {} as any
           })
         }
+
         orderQuery.type = OrderType.LIMIT
         orderQuery.price = countedPrice
         orderQuery.timeInForce = TimeInForce.GTC
 
         break
-      case PriceType.Middle:
+      }
+      case PriceType.Middle: {
         const averagePrice = await getSymbolAveragePrice(params.symbol)
         if (averagePrice.error) {
           return resolve({
@@ -103,11 +106,39 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
             data: {} as any
           })
         }
+
+        const countedPrice = enhancePrice(averagePrice.data, priceFilter)
+
+        if (countedPrice < 0) {
+          return resolve({
+            error: 'INVALID_PRICE',
+            errorData: undefined,
+            data: {} as any
+          })
+        }
+
         orderQuery.type = OrderType.LIMIT
-        orderQuery.price = enhancePrice(averagePrice.data, priceFilter)
+        orderQuery.price = countedPrice
         orderQuery.timeInForce = TimeInForce.GTC
 
+        // if (params.quantityType === QuantityType.QuoteOrderQty) {
+        //   const quantity = params.quoteOrderQty / averagePrice.data
+        //
+        //   const countedQuantity = enhanceQuantity(quantity, lotSize)
+        //
+        //   if (countedQuantity < 0) {
+        //     return resolve({
+        //       error: 'INVALID_QUANTITY',
+        //       errorData: undefined,
+        //       data: {} as any
+        //     })
+        //   }
+        //
+        //   orderQuery.quantity = countedQuantity
+        // }
+
         break
+      }
       default:
         orderQuery.type = OrderType.MARKET
     }
@@ -140,7 +171,34 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
           })
         }
 
-        orderQuery.quoteOrderQty = quoteOrderQty
+        if (params.priceType === PriceType.Market) {
+          orderQuery.quoteOrderQty = quoteOrderQty
+        } else {
+          if (params.priceType === PriceType.Middle) {
+            const averagePriceResult = await getSymbolAveragePrice(params.symbol)
+            if (averagePriceResult.error) {
+              return resolve({
+                error: averagePriceResult.error,
+                errorData: averagePriceResult.errorData,
+                data: {} as any
+              })
+            }
+
+            orderQuery.price = enhancePrice(averagePriceResult.data, priceFilter)
+          }
+
+          const countedQuantity = enhanceQuantity(params.quoteOrderQty / orderQuery.price, lotSize)
+
+          if (countedQuantity < 0) {
+            return resolve({
+              error: 'INVALID_QUANTITY',
+              errorData: undefined,
+              data: {} as any
+            })
+          }
+
+          orderQuery.quantity = countedQuantity
+        }
         break
 
       // Sell all
@@ -181,7 +239,7 @@ export const placeSellOrder = async (params: PlaceSellOrderParams): ReturnPromis
     // return resolve(testResult)
   })
 
-export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise<BinanceNewOrderResponseFull> =>
+export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise<NewOrderResponseFull> =>
   new Promise(async (resolve, reject) => {
     const exchangeInfo = await BinanceSymbolTsModel.findOne({ symbol: params.symbol })
 
@@ -203,7 +261,7 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
     }
 
     switch (params.priceType) {
-      case PriceType.Price:
+      case PriceType.Price: {
         const countedPrice = enhancePrice(params.price, priceFilter)
 
         if (countedPrice < 0) {
@@ -213,12 +271,14 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
             data: {} as any
           })
         }
+
         orderQuery.type = OrderType.LIMIT
         orderQuery.price = countedPrice
         orderQuery.timeInForce = TimeInForce.GTC
 
         break
-      case PriceType.Middle:
+      }
+      case PriceType.Middle: {
         const averagePrice = await getSymbolAveragePrice(params.symbol)
         if (averagePrice.error) {
           return resolve({
@@ -227,27 +287,39 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
             data: {} as any
           })
         }
-        orderQuery.type = OrderType.LIMIT
-        orderQuery.price = enhancePrice(averagePrice.data, priceFilter)
-        orderQuery.timeInForce = TimeInForce.GTC
 
-        if (params.quantityType === QuantityType.QuoteOrderQty) {
-          const quantity = params.quoteOrderQty / averagePrice.data
+        const countedPrice = enhancePrice(averagePrice.data, priceFilter)
 
-          const countedQuantity = enhanceQuantity(quantity, lotSize)
-
-          if (countedQuantity < 0) {
-            return resolve({
-              error: 'INVALID_QUANTITY',
-              errorData: undefined,
-              data: {} as any
-            })
-          }
-
-          orderQuery.quantity = countedQuantity
+        if (countedPrice < 0) {
+          return resolve({
+            error: 'INVALID_PRICE',
+            errorData: undefined,
+            data: {} as any
+          })
         }
 
+        orderQuery.type = OrderType.LIMIT
+        orderQuery.price = countedPrice
+        orderQuery.timeInForce = TimeInForce.GTC
+
+        // if (params.quantityType === QuantityType.QuoteOrderQty) {
+        //   const quantity = params.quoteOrderQty / averagePrice.data
+        //
+        //   const countedQuantity = enhanceQuantity(quantity, lotSize)
+        //
+        //   if (countedQuantity < 0) {
+        //     return resolve({
+        //       error: 'INVALID_QUANTITY',
+        //       errorData: undefined,
+        //       data: {} as any
+        //     })
+        //   }
+        //
+        //   orderQuery.quantity = countedQuantity
+        // }
+
         break
+      }
       default:
         orderQuery.type = OrderType.MARKET
     }
@@ -283,16 +355,18 @@ export const placeBuyOrder = async (params: PlaceSellOrderParams): ReturnPromise
         if (params.priceType === PriceType.Market) {
           orderQuery.quoteOrderQty = quoteOrderQty
         } else {
-          const averagePriceResult = await getSymbolAveragePrice(params.symbol)
-          if (averagePriceResult.error) {
-            return resolve({
-              error: averagePriceResult.error,
-              errorData: averagePriceResult.errorData,
-              data: {} as any
-            })
-          }
+          if (params.priceType === PriceType.Middle) {
+            const averagePriceResult = await getSymbolAveragePrice(params.symbol)
+            if (averagePriceResult.error) {
+              return resolve({
+                error: averagePriceResult.error,
+                errorData: averagePriceResult.errorData,
+                data: {} as any
+              })
+            }
 
-          orderQuery.price = enhancePrice(averagePriceResult.data, priceFilter)
+            orderQuery.price = enhancePrice(averagePriceResult.data, priceFilter)
+          }
 
           const countedQuantity = enhanceQuantity(params.quoteOrderQty / orderQuery.price, lotSize)
 

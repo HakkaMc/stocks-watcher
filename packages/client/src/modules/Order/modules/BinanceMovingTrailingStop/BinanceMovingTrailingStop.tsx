@@ -12,42 +12,37 @@ import { SymbolList } from '../SymbolList/SymbolList'
 import styles from '../../styles.module.scss'
 import { Label } from '../../../../components'
 import { SetOrder, SetOrderVariables } from '../../../../types/graphql/generated/SetOrder'
-import { BinanceAccountInformation_getBinanceAccountInformation_balances as Balance } from '../../../../types/graphql/generated/BinanceAccountInformation'
-import { BinanceLastPriceSubscription_binanceLastPrice as BinanceLastPrice } from '../../../../types/graphql/generated/BinanceLastPriceSubscription'
 import { orderTemplate } from '../../orderTemplate'
+import { FormBase, PropsBase } from "../../types";
+import { PriceTypeComponent } from "../PriceType/PriceType";
+import { QuantityTypeComponent } from "../QuantityType/QuantityType";
 
-type Props = {
-  assetAmount: number
-  balances: Array<Balance>
-  lastPrice?: BinanceLastPrice
-  setError: (error: any) => void
-  setLoading: (value: boolean) => void
-  setSymbol: (symbol: string) => void
-  symbol: string
-}
+type Props = PropsBase
 
-type FormValues = {
+type FormValues = FormBase & {
   activateOnPrice: string
   percent: number
   priceType: PriceType
   quantityType: QuantityType
   quantity: string
   quoteOrderQty: string
-  symbol: string
 }
 
 export const BinanceMovingTrailingStop = ({
   balances,
   assetAmount,
+  dollars,
   lastPrice,
-  symbol: predefinedSymbol,
+                                            baseAsset: predefinedBaseAsset = '',
+                                            quoteAsset: predefinedQuoteAsset = '',
   setSymbol,
   setLoading,
   setError
 }: Props) => {
   const form = useForm<FormValues>({
     defaultValues: {
-      symbol: predefinedSymbol,
+      baseAsset: predefinedBaseAsset,
+      quoteAsset: predefinedQuoteAsset,
       activateOnPrice: '',
       percent: 5,
       priceType: PriceType.Market,
@@ -88,7 +83,10 @@ export const BinanceMovingTrailingStop = ({
     const quantity = parseNumber(values.quantity)
     const quoteOrderQty = parseNumber(values.quoteOrderQty)
 
-    if (!values.priceType) {
+    if (!values.baseAsset || !values.quoteAsset) {
+      console.log('Choose symbol!')
+    }
+    else if (!values.priceType) {
       // TODO
       console.log('Choose price type')
     } else if (!activateOnPriceTmp || activateOnPriceTmp < 0) {
@@ -102,7 +100,7 @@ export const BinanceMovingTrailingStop = ({
           record: {
             ...orderTemplate,
             exchange: 'BINANCE',
-            symbol: values.symbol,
+            symbol: `${values.baseAsset}${values.quoteAsset}`,
             activateOnPrice: activateOnPriceTmp,
             percent: percentTmp,
             priceType: values.priceType,
@@ -137,7 +135,7 @@ export const BinanceMovingTrailingStop = ({
             <Label>Symbol:</Label>
           </td>
           <td>
-            <SymbolList form={form} balances={balances} onChange={setSymbol} />
+            <SymbolList form={form} balances={balances} setSymbol={setSymbol}/>
           </td>
         </tr>
         <tr>
@@ -173,20 +171,7 @@ export const BinanceMovingTrailingStop = ({
             <Label size={42}>Sell on:</Label>
           </td>
           <td>
-            <Controller
-              control={form.control}
-              name="priceType"
-              render={({ field: { onBlur, ref, onChange, value } }) => (
-                <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
-                  <Box>
-                    <FormControlLabel value={PriceType.Market} control={<Radio />} label="Market" />
-                  </Box>
-                  <Box>
-                    <FormControlLabel value={PriceType.Middle} control={<Radio />} label="Middle" />
-                  </Box>
-                </RadioGroup>
-              )}
-            />
+            <PriceTypeComponent form={form} lastPrice={lastPrice} hidePriceInput/>
           </td>
         </tr>
         <tr>
@@ -194,36 +179,38 @@ export const BinanceMovingTrailingStop = ({
             <Label size={42}>Quantity:</Label>
           </td>
           <td>
-            <Controller
-              control={form.control}
-              name="quantityType"
-              defaultValue={QuantityType.All}
-              render={({ field: { onBlur, ref, onChange, value } }) => (
-                <RadioGroup onChange={(event, val) => onChange(val)} value={value}>
-                  <Box>
-                    <FormControlLabel value={QuantityType.All} control={<Radio />} label="All" />
-                    <FormattedNumber value={assetAmount} minimumFractionDigits={4} /> (
-                    <FormattedNumber value={assetAmount * (lastPrice?.middle || 0)} style="currency" currency="USD" />)
-                  </Box>
-                  <Box>
-                    <FormControlLabel
-                      value={QuantityType.Quantity}
-                      control={<Radio />}
-                      label="Quantity of the base Asset"
-                    />
-                    <Input form={form} name="quantity" disabled={value !== QuantityType.Quantity} />
-                  </Box>
-                  <Box>
-                    <FormControlLabel
-                      value={QuantityType.QuoteOrderQty}
-                      control={<Radio />}
-                      label="Quantity of the BUSD to sell"
-                    />
-                    <Input form={form} name="quoteOrderQty" disabled={value !== QuantityType.QuoteOrderQty} />
-                  </Box>
-                </RadioGroup>
-              )}
-            />
+            <QuantityTypeComponent type="SELL" assetAmount={assetAmount} form={form} dollars={dollars} lastPrice={lastPrice?.ask}/>
+
+            {/*<Controller*/}
+            {/*  control={form.control}*/}
+            {/*  name="quantityType"*/}
+            {/*  defaultValue={QuantityType.All}*/}
+            {/*  render={({ field: { onBlur, ref, onChange, value } }) => (*/}
+            {/*    <RadioGroup onChange={(event, val) => onChange(val)} value={value}>*/}
+            {/*      <Box>*/}
+            {/*        <FormControlLabel value={QuantityType.All} control={<Radio />} label="All" />*/}
+            {/*        <FormattedNumber value={assetAmount.free} minimumFractionDigits={4} /> (*/}
+            {/*        <FormattedNumber value={assetAmount.free * (lastPrice?.middle || 0)} style="currency" currency="USD" />)*/}
+            {/*      </Box>*/}
+            {/*      <Box>*/}
+            {/*        <FormControlLabel*/}
+            {/*          value={QuantityType.Quantity}*/}
+            {/*          control={<Radio />}*/}
+            {/*          label="Quantity of the base Asset"*/}
+            {/*        />*/}
+            {/*        <Input form={form} name="quantity" disabled={value !== QuantityType.Quantity} />*/}
+            {/*      </Box>*/}
+            {/*      <Box>*/}
+            {/*        <FormControlLabel*/}
+            {/*          value={QuantityType.QuoteOrderQty}*/}
+            {/*          control={<Radio />}*/}
+            {/*          label="Quantity of the BUSD to sell"*/}
+            {/*        />*/}
+            {/*        <Input form={form} name="quoteOrderQty" disabled={value !== QuantityType.QuoteOrderQty} />*/}
+            {/*      </Box>*/}
+            {/*    </RadioGroup>*/}
+            {/*  )}*/}
+            {/*/>*/}
           </td>
         </tr>
         <tr>

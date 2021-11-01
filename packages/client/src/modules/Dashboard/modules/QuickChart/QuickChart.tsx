@@ -212,13 +212,19 @@ export const QuickChart = ({
 }: Props) => {
   const [chart, setChart] = useState<any>()
 
-  const pricesResponse = useQuery<{ getPrices: GetPrices }>(GET_PRICES, {
+  const [getPrices, pricesResponse] = useLazyQuery<{ getPrices: GetPrices }>(GET_PRICES, {
     variables: { symbol, range: '30', timestampFrom: tmpTFrom.getTime(), timestampTo: tmpTto.getTime() }
   })
 
   useEffect(() => {
-    pricesResponse.refetch()
-  }, [pricesResponse.refetch, forceRefreshTrigger])
+    const delay = Math.random() * 1000
+    console.log(delay)
+    setTimeout(getPrices, delay)
+  }, [])
+
+  useEffect(() => {
+    getPrices()
+  }, [forceRefreshTrigger])
 
   useEffect(() => {
     if (!pricesResponse.loading && pricesResponse.data && !pricesResponse.error && chart) {

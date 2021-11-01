@@ -9,13 +9,9 @@
 
 export interface binanceOrderUpdate_binanceOrderUpdate {
   __typename: "BinanceOrderUpdate";
-  eventTime: number;
-  orderId: number;
-  side: string;
-  symbol: string;
-  transactionTime: number;
+  timestamp: number;
 }
 
 export interface binanceOrderUpdate {
-  binanceOrderUpdate: binanceOrderUpdate_binanceOrderUpdate | null;
+  binanceOrderUpdate: binanceOrderUpdate_binanceOrderUpdate;
 }

@@ -2,24 +2,38 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import classNames from 'classnames'
 import { BinanceBalance, BinanceLastPrice, BinanceTrade } from '@sw/shared/src/graphql'
 import { useSubscription, useLazyQuery, useQuery } from '@apollo/client'
-import { IconButton } from '@material-ui/core'
+import { IconButton, Tooltip, Typography, Box } from '@material-ui/core'
 import { FormattedNumber } from 'react-intl'
+import { grey } from "@material-ui/core/colors";
 
 import { dispatchers } from '../../../redux'
-import { CloseIcon } from '../../../utils/icons'
+import { CloseIcon, AddIcon } from '../../../utils/icons'
 import { updateBoughtPrice, updateActualPrice } from '../store'
 import { ModalRoutes, OrderDialogType } from '../../../constants'
 import { BINANCE_LAST_PRICE_SUBSCRIPTION, GET_BINANCE_CACHED_LAST_PRICE, GET_BINANCE_TRADES } from '../../../gqls'
-
-import styles from '../styles.module.scss'
 import { GetBinanceProfile_getBinanceProfile_countedBalance } from '../../../types/graphql/generated/GetBinanceProfile'
 import { BinanceCachedLastPrice } from '../../../types/graphql/generated/BinanceCachedLastPrice'
+import { getPrecision, roundToDigits } from '../../../utils/mix'
+
+import styles from '../styles.module.scss'
+
 
 type Props = {
   balance: GetBinanceProfile_getBinanceProfile_countedBalance
   showAll: boolean
   index: number
 }
+
+// {!Number.isNaN(lastPriceTimestamp) && Date.now() - lastPriceTimestamp > 120 && (
+//   <Typography variant="caption" color="textSecondary" display="block">
+//     {new Date(lastPriceTimestamp).toLocaleTimeString()}
+//   </Typography>
+// )}
+// {Number.isNaN(lastPriceTimestamp)&& (
+//   <Typography variant="caption" color="textSecondary" display="block">
+//     (!)
+//   </Typography>
+// )}
 
 export const Row2 = ({ balance, showAll, index }: Props) => {
   const timeoutRef = useRef<number>(-1)
@@ -62,23 +76,40 @@ export const Row2 = ({ balance, showAll, index }: Props) => {
     })
   }, [dispatchers])
 
-  const lastPrice = useMemo(() => {
+  const showBuyModal = useCallback(() => {
+    dispatchers.modal.open({
+      name: ModalRoutes.Order,
+      props: {
+        symbol: `${balance.asset}BUSD`,
+        amount: balance.quantity,
+        orderDialogType: OrderDialogType.BinanceDirectBuy
+      }
+    })
+  }, [dispatchers])
+
+  const { lastPrice, lastPriceTimestamp } = useMemo(() => {
     if (['USDT', 'BUSD'].includes(balance.asset.toUpperCase())) {
-      return 1
+      return {
+        lastPrice: 1,
+        lastPriceTimestamp: Number.NaN
+      }
     }
 
     if (lastPriceResponse.data?.binanceLastPrice) {
       clearTimeout(timeoutRef.current)
       updateActualPrice(balance.asset, balance.quantity * lastPriceResponse.data?.binanceLastPrice.ask)
-      return lastPriceResponse.data?.binanceLastPrice.ask
+      return {
+        lastPrice: lastPriceResponse.data?.binanceLastPrice.ask,
+        lastPriceTimestamp: lastPriceResponse.data?.binanceLastPrice.timestamp
+      }
     }
 
     if (lastCachedPriceResponse.data?.getBinanceCachedLastPrice) {
       updateActualPrice(balance.asset, balance.quantity * lastCachedPriceResponse.data?.getBinanceCachedLastPrice.ask)
-      return lastCachedPriceResponse.data?.getBinanceCachedLastPrice.ask
+      return { lastPrice: lastCachedPriceResponse.data?.getBinanceCachedLastPrice.ask, lastPriceTimestamp: Number.NaN }
     }
 
-    return Number.NaN
+    return { lastPrice: Number.NaN, lastPriceTimestamp: Number.NaN }
   }, [lastPriceResponse, lastCachedPriceResponse, updateActualPrice, balance])
 
   const actualAmount = useMemo(() => {
@@ -114,39 +145,93 @@ export const Row2 = ({ balance, showAll, index }: Props) => {
               href={`https://www.tradingview.com/chart/?symbol=BINANCE:${balance.asset}BUSD`}
               target="_blank"
               rel="noreferrer"
+              className={styles.noUnderline}
             >
-              {balance.asset}
+              <Box color={grey[600]}>{balance.asset}</Box>
             </a>
           </b>
         </td>
         <td>
-          <FormattedNumber value={balance.quantity} minimumFractionDigits={4} />
+          <Box color={grey[600]}>
+          <FormattedNumber
+            value={balance.quantity}
+            minimumFractionDigits={4}
+          />
+          </Box>
         </td>
         <td>
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <Box color={grey[600]}>
+            <FormattedNumber
+              value={roundToDigits(balance.averagePurchasePrice)}
+              minimumFractionDigits={getPrecision(roundToDigits(balance.averagePurchasePrice))}
+              style="currency"
+              currencyDisplay="narrowSymbol"
+              currency="USD"
+            />
+            </Box>
+          )}
+        </td>
+        <td>
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <Tooltip title={lastPriceTimestamp > 0 ? new Date(lastPriceTimestamp).toLocaleTimeString() : '-'}>
+              <span
+                className={classNames({
+                  // [styles.orange]: !Number.isNaN(lastPriceTimestamp) && (Date.now()-lastPriceTimestamp)>60,
+                  [styles.red]: lastPrice < balance.averagePurchasePrice,
+                  [styles.green]: lastPrice > balance.averagePurchasePrice
+                })}
+              >
+                <FormattedNumber
+                  value={lastPrice}
+                  minimumFractionDigits={getPrecision(lastPrice, 2)}
+                  style="currency"
+                  currency="USD"
+                  currencyDisplay="narrowSymbol"
+                />
+              </span>
+            </Tooltip>
+          )}
+        </td>
+        <td>
+          <Box color={grey[600]}>
           <FormattedNumber
-            value={balance.averagePurchasePrice}
-            minimumFractionDigits={4}
+            value={balance.amount}
+            minimumFractionDigits={2}
             style="currency"
             currency="USD"
+            currencyDisplay="narrowSymbol"
           />
+          </Box>
         </td>
         <td>
-          <FormattedNumber value={lastPrice} minimumFractionDigits={4} style="currency" currency="USD" />
+          <Box color={grey[600]}>
+          <FormattedNumber
+            value={actualAmount}
+            minimumFractionDigits={2}
+            style="currency"
+            currency="USD"
+            currencyDisplay="narrowSymbol"
+          /></Box>
         </td>
-        <td>
-          <FormattedNumber value={balance.amount} minimumFractionDigits={2} style="currency" currency="USD" />
+        <td className={styles.equalCell}>
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && <>=</>}
         </td>
-        <td>
-          <FormattedNumber value={actualAmount} minimumFractionDigits={2} style="currency" currency="USD" />
-        </td>
-        <td className={styles.equalCell}>=</td>
         <td
           className={classNames({
             [styles.green]: unrealizedProfit >= 0,
             [styles.red]: unrealizedProfit < 0
           })}
         >
-          <FormattedNumber value={unrealizedProfit} minimumFractionDigits={2} style="currency" currency="USD" />
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <FormattedNumber
+              value={unrealizedProfit}
+              minimumFractionDigits={2}
+              style="currency"
+              currency="USD"
+              currencyDisplay="narrowSymbol"
+            />
+          )}
         </td>
 
         <td
@@ -155,7 +240,9 @@ export const Row2 = ({ balance, showAll, index }: Props) => {
             [styles.red]: unrealizedProfit < 0
           })}
         >
-          <FormattedNumber value={unrealizedPercentageProfit / 100} minimumFractionDigits={2} style="percent" />
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <FormattedNumber value={unrealizedPercentageProfit / 100} minimumFractionDigits={2} style="percent" />
+          )}
         </td>
         <td
           className={classNames({
@@ -163,10 +250,23 @@ export const Row2 = ({ balance, showAll, index }: Props) => {
             [styles.red]: balance.realizedProfit < 0
           })}
         >
-          <FormattedNumber value={balance.realizedProfit} minimumFractionDigits={2} style="currency" currency="USD" />
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <FormattedNumber
+              value={balance.realizedProfit}
+              minimumFractionDigits={2}
+              style="currency"
+              currency="USD"
+              currencyDisplay="narrowSymbol"
+            />
+          )}
         </td>
         <td>
-          {!['USDT', 'BUSD'].includes(balance.asset.toUpperCase()) && (
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
+            <IconButton onClick={showBuyModal}>
+              <AddIcon />
+            </IconButton>
+          )}
+          {!['USDT', 'BUSD', 'USDC'].includes(balance.asset.toUpperCase()) && (
             <IconButton onClick={showSellModal}>
               <CloseIcon />
             </IconButton>

@@ -22,41 +22,41 @@ const BinanceLastPrice = schemaComposer
   })
   .getType()
 
-const BinanceNewOrderResponseFull = schemaComposer.createObjectTC({
-  name: 'BinanceNewOrderResponseFull',
-  fields: {
-    symbol: 'String!',
-    orderId: 'Int!',
-    orderListId: 'Int!',
-    clientOrderId: 'String!',
-    transactTime: 'Float!',
-    price: 'String!',
-    origQty: 'String!',
-    executedQty: 'String!',
-    cummulativeQuoteQty: 'String!',
-    status: 'String!',
-    timeInForce: 'String!',
-    type: 'String!',
-    side: 'String!',
-    fills: new GraphQLNonNull(
-      new GraphQLList(
-        new GraphQLNonNull(
-          schemaComposer
-            .createObjectTC({
-              name: 'BinanceFill',
-              fields: {
-                price: 'Float!',
-                qty: 'Float!',
-                commission: 'Float!',
-                commissionAsset: 'String!'
-              }
-            })
-            .getType()
-        )
-      )
-    )
-  }
-})
+// const BinanceNewOrderResponseFull = schemaComposer.createObjectTC({
+//   name: 'BinanceNewOrderResponseFull',
+//   fields: {
+//     symbol: 'String!',
+//     orderId: 'Int!',
+//     orderListId: 'Int!',
+//     clientOrderId: 'String!',
+//     transactTime: 'Float!',
+//     price: 'String!',
+//     origQty: 'String!',
+//     executedQty: 'String!',
+//     cummulativeQuoteQty: 'String!',
+//     status: 'String!',
+//     timeInForce: 'String!',
+//     type: 'String!',
+//     side: 'String!',
+//     fills: new GraphQLNonNull(
+//       new GraphQLList(
+//         new GraphQLNonNull(
+//           schemaComposer
+//             .createObjectTC({
+//               name: 'BinanceFill',
+//               fields: {
+//                 price: 'Float!',
+//                 qty: 'Float!',
+//                 commission: 'Float!',
+//                 commissionAsset: 'String!'
+//               }
+//             })
+//             .getType()
+//         )
+//       )
+//     )
+//   }
+// })
 
 const setBinanceSellOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, ResolverContext, any> = {
   kind: 'mutation',
@@ -205,34 +205,30 @@ const cancelBinanceOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, R
   kind: 'mutation',
   name: 'cancelBinanceOrder',
   type: new GraphQLNonNull(
-    new GraphQLList(
-      new GraphQLNonNull(
-        schemaComposer
-          .createObjectTC({
-            name: 'CancelBinanceOrder',
-            fields: {
-              symbol: 'String!',
-              origClientOrderId: 'String!',
-              orderId: 'Int!',
-              orderListId: 'Int!',
-              clientOrderId: 'String!',
-              price: 'Float!',
-              origQty: 'Float!',
-              executedQty: 'Float!',
-              cummulativeQuoteQty: 'Float!',
-              status: 'String!',
-              timeInForce: 'String!',
-              type: 'String!',
-              side: 'String!'
-            }
-          })
-          .getType()
-      )
-    )
+    schemaComposer
+      .createObjectTC({
+        name: 'CancelBinanceOrder',
+        fields: {
+          symbol: 'String!',
+          origClientOrderId: 'String!',
+          orderId: 'Float!',
+          orderListId: 'Float!',
+          clientOrderId: 'String!',
+          price: 'Float!',
+          origQty: 'Float!',
+          executedQty: 'Float!',
+          cummulativeQuoteQty: 'Float!',
+          status: 'String!',
+          timeInForce: 'String!',
+          type: 'String!',
+          side: 'String!'
+        }
+      })
+      .getType()
   ),
   args: {
     symbol: 'String!',
-    orderId: 'Int',
+    orderId: 'Float',
     origClientOrderId: 'String'
   },
   resolve: async (source, args, context) => {
@@ -242,6 +238,7 @@ const cancelBinanceOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<any, R
       return new Error(result.error)
     }
 
+    console.log('Cancel binance order result: ', result.data)
     return result.data
   }
 }
@@ -308,15 +305,25 @@ export const binanceResolvers = {
     binanceBalanceUpdate: {
       kind: 'subscription',
       name: 'binanceBalanceUpdate',
-      type: schemaComposer.createObjectTC({
-        name: 'BinanceBalanceUpdate',
-        fields: {
-          asset: 'String!',
-          delta: 'Float!',
-          eventTime: 'Int!',
-          clearTime: 'Int!'
-        }
-      }),
+      // type: schemaComposer.createObjectTC({
+      //   name: 'BinanceBalanceUpdate',
+      //   fields: {
+      //     asset: 'String!',
+      //     delta: 'Float!',
+      //     eventTime: 'Int!',
+      //     clearTime: 'Int!'
+      //   }
+      // }),
+      type: new GraphQLNonNull(
+        schemaComposer
+          .createObjectTC({
+            name: 'BinanceBalanceUpdate',
+            fields: {
+              timestamp: 'Float!'
+            }
+          })
+          .getType()
+      ),
       resolve: (data: any) => data,
       subscribe: async (parent: any, args: any, context: any) => {
         const { userId } = context.session
@@ -328,16 +335,26 @@ export const binanceResolvers = {
     binanceOrderUpdate: {
       kind: 'subscription',
       name: 'binanceOrderUpdate',
-      type: schemaComposer.createObjectTC({
-        name: 'BinanceOrderUpdate',
-        fields: {
-          symbol: 'String!',
-          eventTime: 'Int!',
-          side: 'String!',
-          orderId: 'Int!',
-          transactionTime: 'Int!'
-        }
-      }),
+      type: new GraphQLNonNull(
+        schemaComposer
+          .createObjectTC({
+            name: 'BinanceOrderUpdate',
+            fields: {
+              timestamp: 'Float!'
+            }
+          })
+          .getType()
+      ),
+      // type: schemaComposer.createObjectTC({
+      //   name: 'BinanceOrderUpdate',
+      //   fields: {
+      //     symbol: 'String!',
+      //     eventTime: 'Int!',
+      //     side: 'String!',
+      //     orderId: 'Int!',
+      //     transactionTime: 'Int!'
+      //   }
+      // }),
       resolve: (data: any) => data,
       subscribe: async (parent: any, args: any, context: any) => {
         const { userId } = context.session

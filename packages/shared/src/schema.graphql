@@ -75,6 +75,7 @@ type Query {
     limit: Int = 100
     sort: SortFindManyBinanceTradeInput
   ): [BinanceTrade!]!
+  getBinanceInvestedAmount: Float!
   getBinanceSymbols(
     
     filter: FilterFindManyBinanceSymbolInput
@@ -638,8 +639,8 @@ type Mutation {
   setOrder(record: CreateOneOrderInput!): CreateOneOrderPayload
   setBinanceSellOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
   setBinanceBuyOrder(symbol: String!, priceType: String!, price: Float!, quantityType: String!, quantity: Float!, quoteOrderQty: Float!): String!
-  cancelBinanceOrder(symbol: String!, orderId: Int, origClientOrderId: String): [CancelBinanceOrder!]!
-  refreshBinanceTrades: String!
+  cancelBinanceOrder(symbol: String!, orderId: Float, origClientOrderId: String): CancelBinanceOrder!
+  refreshBinanceTrades(force: Boolean): String!
 }
 
 type CreateOneOrderPayload {
@@ -671,8 +672,8 @@ input CreateOneOrderInput {
 type CancelBinanceOrder {
   symbol: String!
   origClientOrderId: String!
-  orderId: Int!
-  orderListId: Int!
+  orderId: Float!
+  orderListId: Float!
   clientOrderId: String!
   price: Float!
   origQty: Float!
@@ -687,8 +688,8 @@ type CancelBinanceOrder {
 type Subscription {
   lastPrice(symbol: String): LastPrice
   binanceLastPrice(symbol: String): BinanceLastPrice!
-  binanceBalanceUpdate: BinanceBalanceUpdate
-  binanceOrderUpdate: BinanceOrderUpdate
+  binanceBalanceUpdate: BinanceBalanceUpdate!
+  binanceOrderUpdate: BinanceOrderUpdate!
   binanceOcoOrderUpdate: BinanceOcoOrderUpdate
 }
 
@@ -700,18 +701,11 @@ type LastPrice {
 }
 
 type BinanceBalanceUpdate {
-  asset: String!
-  delta: Float!
-  eventTime: Int!
-  clearTime: Int!
+  timestamp: Float!
 }
 
 type BinanceOrderUpdate {
-  symbol: String!
-  eventTime: Int!
-  side: String!
-  orderId: Int!
-  transactionTime: Int!
+  timestamp: Float!
 }
 
 type BinanceOcoOrderUpdate {

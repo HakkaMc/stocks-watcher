@@ -10,6 +10,9 @@ type State = {
   overallPercentageGain: number
 }
 
+// const deposit = 2833 + 4000 + 960 + 1115 + 119 + 1039 + 1148 + 1151 + 11397 + 4408
+let deposit = Number.NaN
+
 const actualPrices: Record<string, number> = {}
 const boughtPrices: Record<string, number> = {}
 
@@ -35,9 +38,12 @@ export const updateBoughtPrice = (symbol: string, price: number) => {
   }, 200)
 }
 
-export const useStore = (): State & { deposit: number } => {
-  const deposit = 2833 + 4000
+export const updateDeposit = (value: number) => {
+  // deposit = value + 119
+  deposit = 118 + 715 +100 +900 + 1000 + 4000 + 960 + 1115 + 119 + 1039 + 1148 + 1151 + 11397 + 4408
+}
 
+export const useStore = (): State & { deposit: number } => {
   const [state, setState] = useState<State>({
     actualPrice: 0,
     boughtPrice: 0,
@@ -66,8 +72,10 @@ export const useStore = (): State & { deposit: number } => {
 
     ret.gain = ret.actualPrice - ret.boughtPrice
     ret.percentageGain = (100 / ret.boughtPrice) * ret.actualPrice - 100
-    ret.overallGain = ret.actualPrice - deposit
-    ret.overallPercentageGain = (100 / deposit) * ret.actualPrice - 100
+    if(!Number.isNaN(deposit)) {
+      ret.overallGain = ret.actualPrice - deposit
+      ret.overallPercentageGain = (100 / deposit) * ret.actualPrice - 100
+    }
 
     setState(ret)
   }, [setState])
@@ -88,7 +96,7 @@ export const useStore = (): State & { deposit: number } => {
   }, [compute])
 
   return {
-    deposit,
+    deposit: deposit||0,
     ...state
   }
 }

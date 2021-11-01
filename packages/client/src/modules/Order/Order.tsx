@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, Typography } from '@material-ui/core'
 import { useQuery, useSubscription } from '@apollo/client'
+import set from 'lodash/set'
 
 import { ErrorModal, ModalTemplate } from '../../components'
 import { Info } from './modules/Info/Info'
 
-import { BINANCE_LAST_PRICE_SUBSCRIPTION, GET_BINANCE_ACCOUNT_INFORMATION } from '../../gqls'
+import { BINANCE_LAST_PRICE_SUBSCRIPTION, GET_BINANCE_ACCOUNT_INFORMATION, GET_BINANCE_SYMBOLS } from '../../gqls'
 
 import {
   BinanceLastPriceSubscription,
@@ -23,6 +24,9 @@ import { useModalLoader } from '../../hooks'
 import { BinanceConsolidation } from './modules/BinanceConsolidation/BinanceConsolidation'
 
 import styles from './styles.module.scss'
+import { BinanceSymbols, BinanceSymbolsVariables } from '../../types/graphql/generated/BinanceSymbols'
+import { AssetAmount, Dollars } from './types'
+import { TradingViewWidget } from "./modules/TradingViewWidget/TradingViewWidget";
 
 type Props = {
   id: string
@@ -30,18 +34,26 @@ type Props = {
   orderDialogType?: OrderDialogType
 }
 
-export const Order = ({
-  id: modalId,
-  symbol: predefinedSymbol = '',
-  orderDialogType = OrderDialogType.BinanceDirectBuy
-}: Props) => {
-  const [asset, setAsset] = useState(predefinedSymbol.replace('BUSD', ''))
-  const [symbol, setSymbol] = useState(predefinedSymbol)
+export const Order = ({ id: modalId, symbol = '', orderDialogType = OrderDialogType.BinanceDirectBuy }: Props) => {
+  const [symbolObj, setSymbolObj] = useState<{ baseAsset: string; quoteAsset: string; symbol: string, baseAssetPrecision: number }>({
+    baseAsset: '',
+    quoteAsset: '',
+    symbol: '',
+    baseAssetPrecision: 8
+  })
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<any>()
 
   const { showLoader, hideLoader } = useModalLoader()
+
+  const binanceSymbols = useQuery<BinanceSymbols, BinanceSymbolsVariables>(GET_BINANCE_SYMBOLS, {
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-first',
+    // variables: {
+    //   quoteAsset
+    // }
+  })
 
   const accountInformationResponse = useQuery<BinanceAccountInformation>(GET_BINANCE_ACCOUNT_INFORMATION, {
     fetchPolicy: 'network-only',
@@ -52,7 +64,7 @@ export const Order = ({
     BINANCE_LAST_PRICE_SUBSCRIPTION,
     {
       variables: {
-        symbol
+        symbol: symbolObj.symbol
       }
     }
   )
@@ -74,10 +86,44 @@ export const Order = ({
     }
   }, [loading, formSubmitted])
 
-  const setSymbolWrapper = useCallback((smb: string) => {
-    setSymbol(smb)
-    setAsset(smb.replace('BUSD', ''))
-  }, [])
+  useEffect(() => {
+    window.console.log('Order mount: ', symbol)
+
+    if (binanceSymbols?.data?.getBinanceSymbols && symbol) {
+      const symbolInfo = binanceSymbols?.data?.getBinanceSymbols.find(
+        (symbObj) => symbObj.symbol === symbol.toUpperCase()
+      )
+
+      if (symbolInfo) {
+        setSymbolObj({
+          baseAsset: symbolInfo.baseAsset,
+          baseAssetPrecision: symbolInfo.baseAssetPrecision,
+          quoteAsset: symbolInfo.quoteAsset,
+          symbol: symbolInfo.symbol
+        })
+      }
+    }
+  }, [binanceSymbols, symbol])
+
+  const setSymbolWrapper = useCallback(
+    (symb: string) => {
+      window.console.log('setSymbolWrapper: ', symb)
+
+      const symbolInfo = binanceSymbols?.data?.getBinanceSymbols.find((symbObj) => symbObj.symbol === symb.toUpperCase())
+
+      if (symbolInfo) {
+        setSymbolObj({
+          baseAsset: symbolInfo.baseAsset,
+          baseAssetPrecision: symbolInfo.baseAssetPrecision,
+          quoteAsset: symbolInfo.quoteAsset,
+          symbol: symbolInfo.symbol
+        })
+      }
+    },
+    [binanceSymbols, setSymbolObj]
+  )
+
+
 
   const balances = useMemo(() => {
     const blcs = accountInformationResponse?.data?.getBinanceAccountInformation?.balances
@@ -89,30 +135,59 @@ export const Order = ({
     return []
   }, [accountInformationResponse?.data?.getBinanceAccountInformation?.balances])
 
-  const busdAmount = useMemo(() => {
-    const result = balances.find((balance) => balance.asset === 'BUSD')
-
-    if (result) {
-      return result
+  const showForm = useMemo(()=>{
+    if (binanceSymbols?.data?.getBinanceSymbols && (symbolObj.symbol || balances.length)){
+      return true
     }
 
-    return {
-      free: 0,
-      locked: 0
-    }
-  }, [balances])
+    return false
+  }, [binanceSymbols, accountInformationResponse, balances, symbolObj])
 
-  const assetAmount = useMemo(() => {
-    if (asset) {
-      const result = balances.find((balance) => balance.asset === asset)
-
-      if (result) {
-        return result.free + result.locked
+  const dollars = useMemo((): Dollars => {
+    const ret: Dollars = {
+      BUSD: {
+        free: 0,
+        locked: 0
+      },
+      USDT: {
+        free: 0,
+        locked: 0
+      },
+      USDC: {
+        free: 0,
+        locked: 0
       }
     }
 
-    return 0
-  }, [balances, asset])
+    balances.forEach((balance) => {
+      if (['BUSD', 'USDT', 'USDC'].includes(balance.asset)) {
+        set(ret, balance.asset, {
+          free: balance.free,
+          locked: balance.locked
+        })
+      }
+    })
+
+    return ret
+  }, [balances])
+
+  const assetAmount = useMemo((): AssetAmount => {
+    const ret = {
+      free: 0,
+      locked: 0
+    }
+
+    if (symbolObj.baseAsset) {
+      const result = balances.find((balance) => balance.asset === symbolObj.baseAsset)
+
+      if (result) {
+        ret.free = result.free
+        ret.locked = result.locked
+      }
+    }
+
+    return ret
+  }, [balances, symbolObj])
 
   const { title, FormElement } = useMemo(() => {
     let tmpTitle = ''
@@ -163,25 +238,25 @@ export const Order = ({
     <>
       <ModalTemplate header={<Typography variant="h5">{title}</Typography>} modalId={modalId}>
         <Box className={styles.body}>
-          <Box className={styles.left}>
-            <Info
-              assetAmount={assetAmount}
-              busdAmount={busdAmount}
-              lastPrice={lastPriceResponse?.data?.binanceLastPrice}
-            />
+          <Box className={styles.one}>
+            <Info assetAmount={assetAmount} dollars={dollars} lastPrice={lastPriceResponse?.data?.binanceLastPrice}/>
           </Box>
-          <Box className={styles.right}>
-            <FormElement
+          <Box className={styles.two}>
+            {showForm && <FormElement
               assetAmount={assetAmount}
               balances={balances}
-              busdAmount={busdAmount}
+              dollars={dollars}
               lastPrice={lastPriceResponse?.data?.binanceLastPrice}
               modalId={modalId}
               setError={setError}
               setLoading={setLoading}
               setSymbol={setSymbolWrapper}
-              symbol={symbol}
-            />
+              baseAsset={symbolObj.baseAsset}
+              quoteAsset={symbolObj.quoteAsset}
+            />}
+          </Box>
+          <Box className={styles.three}>
+            <TradingViewWidget symbol={`${symbolObj.baseAsset}${symbolObj.quoteAsset}`}/>
           </Box>
         </Box>
         <ErrorModal error={error} />

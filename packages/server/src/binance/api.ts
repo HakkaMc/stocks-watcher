@@ -52,7 +52,7 @@ export const binanceQuery = (config: AxiosRequestConfig, secured?: boolean): Pro
     enhancedConfig.headers = {}
   }
 
-  enhancedConfig.headers['X-MBX-APIKEY'] = apiKey
+  enhancedConfig.headers['X-MBX-APIKEY'] = apiKey || ''
 
   return new Promise((resolve, reject) => {
     queryStack.push({

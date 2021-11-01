@@ -1,6 +1,9 @@
 import { pubSub } from '../pubSub'
 import { binanceWsUrl } from '../constants'
 import { Websocket } from '../utils/websocket'
+import { getExchangeInfo } from "./queries";
+import { binanceSymbolGraphql, BinanceSymbolTsModel } from "../database/binanceSymbol/schema";
+import { toUpper } from "lodash";
 
 type LastPrice = {
   symbol: string
@@ -19,7 +22,13 @@ const eTypes = {
   kline_1m: 'kline_1m',
   RESULT: 'RESULT'
 }
-
+const subscribeBuffer: Array<{
+  symbol: string
+  id: number
+  method: string
+  params: Array<string>
+}> = []
+let subscriptionsBackup: Array<string> = []
 const subscriptions = new Set()
 const results: Record<string, Function> = {}
 const lastPrices: Record<string, LastPrice> = {}
@@ -35,8 +44,7 @@ websocket.onConnect = () => {
   clearInterval(refreshWebsocketRef)
 
   console.log('Binance WS - onConnect - refresh subscriptionKeys')
-  const subscriptionKeys = Array.from(subscriptions.keys()) as Array<string>
-  subscriptionKeys.forEach((item) => lastPriceSubscribe(item, true))
+  subscriptionsBackup.forEach((item) => lastPriceSubscribe(item, false))
 
   refreshWebsocketRef = setInterval(() => {
     if (
@@ -49,6 +57,8 @@ websocket.onConnect = () => {
 }
 
 websocket.onDisconnect = () => {
+  subscriptionsBackup = Array.from(subscriptions.keys()) as Array<string>
+  subscriptions.clear()
   clearInterval(refreshWebsocketRef)
 }
 
@@ -86,6 +96,8 @@ websocket.onMessage = (data) => {
         timestamp: Date.now()
       }
 
+      // console.log(data.s, ask, bid)
+
       const lastPrice = lastPrices[formattedData.symbol]
       if (!lastPrice || lastPrice.timestamp < formattedData.timestamp - 5000) {
         lastPrices[formattedData.symbol] = formattedData
@@ -96,35 +108,74 @@ websocket.onMessage = (data) => {
   }
 }
 
-export const lastPriceSubscribe = (symbol: string, force?: boolean) => {
+const validSymbolsCache = new Set<string>()
+
+export const lastPriceSubscribe = async (symbol: string, force?: boolean) => {
+  let isValidSymbol = true
+
   let subscription = symbol.toLowerCase()
   if (symbol.indexOf('@') < 0) {
     subscription = `${symbol.toLowerCase()}@${eTypes.bookTicker}`
+
+    if(!validSymbolsCache.has(symbol.toUpperCase())) {
+      isValidSymbol = await BinanceSymbolTsModel.exists({ symbol: symbol.toUpperCase() })
+
+      if(isValidSymbol) {
+        validSymbolsCache.add(symbol.toUpperCase())
+      }
+    }
   }
 
-  if (force || !subscriptions.has(subscription)) {
+  if (isValidSymbol && (force || !subscriptions.has(subscription))) {
     subscriptions.add(subscription)
 
     const id = websocket.requestCounter
-    console.log('subscribe ', symbol, id)
-
-    websocket.send(
-      JSON.stringify({
-        method: 'SUBSCRIBE',
-        params: [subscription],
-        id
-      })
-    )
 
     results[id] = (result: string | null) => {
       if (result === null || result === 'null') {
-        console.log(id, ' finished with code ', result)
+        console.log(`${symbol} subscribed successfully`)
       } else {
         subscriptions.delete(subscription)
         console.error('Binance subscribe ', symbol, 'failed!')
       }
     }
+
+    subscribeBuffer.push({
+      symbol,
+      method: 'SUBSCRIBE',
+      params: [subscription],
+      id
+    })
+
+    // subscribeBuffer.push(()=>{
+    //   console.log('subscribe ', symbol, id, subscription)
+    //
+    //   websocket.send(
+    //     JSON.stringify({
+    //       method: 'SUBSCRIBE',
+    //       params: [subscription],
+    //       id
+    //     })
+    //   )
+    // })
   }
 }
+
+setInterval(()=>{
+  if(subscribeBuffer.length){
+    const data = subscribeBuffer.shift()
+    if(data){
+      console.log('subscribe ', data.symbol, data.id, data.params)
+
+        websocket.send(
+          JSON.stringify({
+            method: data.method,
+            id: data.id,
+            params: data.params
+          })
+        )
+    }
+  }
+}, 2000)
 
 export const getCachedLastPrice = (symbol: string): LastPrice | undefined => lastPrices[symbol]

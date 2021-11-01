@@ -19,13 +19,16 @@ export const session = expressSession({
   name: 'API_SESSION_ID',
   secret: 'stocks-watcher', // TODO - better secret code
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
+  rolling: true,
   cookie: {
+    expires: undefined,
     path: '/',
     secure: false,
     sameSite: false,
     httpOnly: false,
     maxAge: undefined
+    // maxAge: 1*60*60*1000
   },
   store: new MongoStore({
     mongooseConnection: mongoose.connection
@@ -56,15 +59,17 @@ expressServer.use('/auth/refresh', bodyParser.json())
 // }))
 
 expressServer.get('/auth/google/login', (req, res) => {
-  console.log('login session id: ', req.session.id)
-  res.redirect(getGoogleAuthURL())
+  console.log('Login session id: ', req.session.id)
+  const url = getGoogleAuthURL()
+  // console.log('Goto Google login: ', url)
+  res.redirect(url)
 })
 
 expressServer.get('/auth/google/callback', async (req, res) => {
   const { code } = req.query
   const userInfo = await getUserInfo(code as string)
 
-  console.log('callback session id: ', req.session.id)
+  console.log('Login callback - session id: ', req.session.id)
 
   const userData = {
     email: userInfo.email,
@@ -96,7 +101,8 @@ expressServer.get('/auth/google/callback', async (req, res) => {
   }
 
   req.session.cookie.expires = new Date(userInfo.accessTokenExpiration)
-  req.session.cookie.maxAge = userInfo.accessTokenExpiration - Date.now()
+  // req.session.cookie.maxAge = userInfo.accessTokenExpiration - Date.now()
+  req.session.save()
 
   connectBinanceUserDataWebsocket(req.session.userId.toString())
 
@@ -131,6 +137,8 @@ expressServer.post('/auth/refresh', async (req, res) => {
     if (user) {
       // Prevent nonsense token refresh
       if ((user.accessTokenExpiration || 0) - Date.now() > 30 * 60 * 1000) {
+        req.session.userId = user._id
+
         res.status(200).send({
           accessToken,
           accessTokenExpiration: user.accessTokenExpiration
@@ -143,14 +151,21 @@ expressServer.post('/auth/refresh', async (req, res) => {
           { accessToken: token.accessToken, accessTokenExpiration: token.accessTokenExpiration }
         )
 
+        console.log('set expires to: ', new Date(token.accessTokenExpiration).toISOString())
+
+        req.session.userId = user._id
         req.session.cookie.expires = new Date(token.accessTokenExpiration)
-        req.session.cookie.maxAge = token.accessTokenExpiration - Date.now()
+        // req.session.cookie.maxAge = token.accessTokenExpiration - Date.now()
+        // req.session.touch()
+        req.session.save()
 
         res.status(200).send({
           accessToken: token.accessToken,
           accessTokenExpiration: token.accessTokenExpiration
         })
       }
+
+      connectBinanceUserDataWebsocket(user._id.toString())
     } else {
       res.status(401).send()
     }

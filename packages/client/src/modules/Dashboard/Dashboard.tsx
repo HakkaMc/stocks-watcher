@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useQuery } from '@apollo/client'
-import { Symbol as SymbolType } from '@sw/shared/src/graphql'
 import { GET_DASHBOARD } from '../../gqls'
 
 import styles from './styles.module.scss'

@@ -4,6 +4,9 @@ export { default as AddCircleOutlineIcon } from '@material-ui/icons/AddCircleOut
 
 export {
   Add as AddIcon,
+  Remove as RemoveIcon,
+  Exposure as ExposureIcon,
+  AccountBalanceWallet as WalletIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   Refresh as RefreshIcon,
@@ -16,3 +19,5 @@ export {
   Timeline as TimelineIcon,
   List as ListIcon
 } from '@material-ui/icons'
+
+export { FaBitcoin as BitcoinIconFa } from 'react-icons/fa'

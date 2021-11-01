@@ -11,7 +11,10 @@ export interface BinanceSymbols_getBinanceSymbols {
   __typename: "BinanceSymbol";
   symbol: string;
   baseAsset: string;
+  baseAssetPrecision: number;
   quoteAsset: string;
+  quoteAssetPrecision: number;
+  quotePrecision: number;
   filters: any | null;
   ocoAllowed: boolean;
 }

@@ -20,7 +20,7 @@ export const Router = () => {
           <Route path={ROUTES.App} component={AppLazy} />
           <Route path={ROUTES.ChartGroupView} component={ChartGroupViewLazy} />
           <Route exact path="/">
-            <Redirect to={ROUTES.Dashboard} />
+            <Redirect to={ROUTES.BinancePortfolio} />
           </Route>
         </>
       )

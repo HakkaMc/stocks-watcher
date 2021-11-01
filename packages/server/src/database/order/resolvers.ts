@@ -1,7 +1,7 @@
 import { ResolverResolveParams, ObjectTypeComposerFieldConfigAsObjectDefinition } from 'graphql-compose'
 import { orderGraphql, OrderTsModel, OrderTsType } from './schema'
 import { ResolverContext } from '../../types'
-import { computeOrder } from '../../computes/computeOrders'
+import { closeOrder, computeOrder } from '../../computes/computeOrders'
 
 const getOrderTemplate = () => ({
   active: true,
@@ -90,13 +90,10 @@ const cancelOrder: ObjectTypeComposerFieldConfigAsObjectDefinition<
     orderId: 'String!'
   },
   resolve: async (source, args, context) => {
-    const response = await OrderTsModel.findOneAndUpdate(
-      { _id: args.orderId, user: context.session.userId },
-      { active: false }
-    )
+    const response = await closeOrder(args.orderId, context.session.userId)
 
-    if (!response) {
-      return new Error('CANCEL_ORDER_FAILED')
+    if (response.error) {
+      return new Error(response.error)
     }
 
     return 'OK'

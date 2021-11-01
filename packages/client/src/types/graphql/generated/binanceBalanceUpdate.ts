@@ -9,12 +9,9 @@
 
 export interface binanceBalanceUpdate_binanceBalanceUpdate {
   __typename: "BinanceBalanceUpdate";
-  asset: string;
-  clearTime: number;
-  delta: number;
-  eventTime: number;
+  timestamp: number;
 }
 
 export interface binanceBalanceUpdate {
-  binanceBalanceUpdate: binanceBalanceUpdate_binanceBalanceUpdate | null;
+  binanceBalanceUpdate: binanceBalanceUpdate_binanceBalanceUpdate;
 }

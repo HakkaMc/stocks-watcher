@@ -2,6 +2,7 @@ import { getUserDataStreamKey, updateUserDataStreamKey } from './queries'
 import { pubSub } from '../pubSub'
 import { binanceWsUrl } from '../constants'
 import { Websocket } from '../utils/websocket'
+import { countBalance } from './index'
 
 const eTypes = {
   outboundAccountPosition: 'outboundAccountPosition',
@@ -30,6 +31,8 @@ export const connectBinanceUserDataWebsocket = async (userId: string) => {
       })
 
       websocket.onConnect = () => {
+        console.log('User Websocket connected')
+
         clearInterval(refreshWebsocketRef)
         clearInterval(refreshListenKeyRef)
 
@@ -55,35 +58,46 @@ export const connectBinanceUserDataWebsocket = async (userId: string) => {
         connectBinanceUserDataWebsocket(userId)
       }
 
-      websocket.onMessage = (data) => {
+      websocket.onMessage = async (data) => {
         console.log('Binance user WS: ', data.e)
         switch (data.e) {
+          // Account balance has changed
+          case eTypes.outboundAccountPosition:
+            await countBalance(userId)
+            pubSub.publish(`BINANCE_BALANCE_UPDATE`, { timestamp: Date.now() })
+            break
+
+          // Deposits or withdrawals from the account
           case eTypes.balanceUpdate:
-            pubSub.publish(`BINANCE_BALANCE_UPDATE`, {
-              asset: data.a,
-              delta: data.d,
-              eventTime: data.E,
-              clearTime: data.T
-            })
+            await countBalance(userId)
+            pubSub.publish(`BINANCE_BALANCE_UPDATE`, { timestamp: Date.now() })
+            // pubSub.publish(`BINANCE_BALANCE_UPDATE`, {
+            //   asset: data.a,
+            //   delta: data.d,
+            //   eventTime: data.E,
+            //   clearTime: data.T
+            // })
             break
 
           // Orders update
           case eTypes.executionReport:
-            pubSub.publish(`BINANCE_ORDER_UPDATE`, {
-              symbol: data.s,
-              side: data.S,
-              orderId: data.i,
-              eventTime: data.E,
-              transactionTime: data.T
-            })
+            // pubSub.publish(`BINANCE_ORDER_UPDATE`, {
+            //   symbol: data.s,
+            //   side: data.S,
+            //   orderId: data.i,
+            //   eventTime: data.E,
+            //   transactionTime: data.T
+            // })
+            pubSub.publish(`BINANCE_ORDER_UPDATE`, { timestamp: Date.now() })
             break
 
           case eTypes.listStatus:
-            pubSub.publish(`BINANCE_OCO_ORDER_UPDATE`, {
-              symbol: data.s,
-              eventTime: data.E,
-              transactionTime: data.T
-            })
+            pubSub.publish(`BINANCE_ORDER_UPDATE`, { timestamp: Date.now() })
+            // pubSub.publish(`BINANCE_OCO_ORDER_UPDATE`, {
+            //   symbol: data.s,
+            //   eventTime: data.E,
+            //   transactionTime: data.T
+            // })
             break
           default:
         }
